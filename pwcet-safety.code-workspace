@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "pwcet-safety",
+			"path": "."
+		},
+		{
+			"name": "RealTimeScheduling",
+			"path": "../../.julia/dev/RealTimeScheduling"
+		},
+		{
+			"name": "ControlTimingSafety",
+			"path": "../../.julia/dev/ControlTimingSafety"
+		}
+	],
+	"settings": {}
+}
