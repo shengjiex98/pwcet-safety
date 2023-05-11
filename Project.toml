@@ -1,3 +1,10 @@
 [deps]
+ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
 ControlTimingSafety = "3a76c758-31f1-42cb-b697-12fe755e3b12"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+RealTimeScheduling = "f1524149-62f5-490d-8249-9bfac76a7111"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
