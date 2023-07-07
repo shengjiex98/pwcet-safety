@@ -3,7 +3,8 @@ module Experiments
 
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
-export sim, missrow, misstotal, missfirst
+export sim, missrow, misstotal, missfirst, calculate_mean_miss
+export beta, Fcv
 
 import Random
 using Distributions
@@ -91,6 +92,55 @@ end
 function missfirst(σ::BitVector)
     f = findfirst(σ .== 0)
     f === nothing ? 101 : f
+end
+
+function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
+    total_miss = 0
+    num_samples = length(samples)
+
+    for (σ, _) in samples
+        miss_value = 0
+        miss_value = V(σ)
+        total_miss += miss_value
+    end
+    
+    mean_miss = total_miss / num_samples
+    return mean_miss
+end
+
+function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
+    n = length(samples)
+    sum_1 = 0;
+    sum_2 = 0;
+    sum_3 = 0;
+    mean = calculate_mean_miss(V, samples)
+    for (σ, devation) in samples
+        sum_1 += indicator(devation, y) * V(σ)
+        sum_2 += indicator(devation, y)
+        sum_3 += (V(σ) - mean) ^ 2
+    end
+    beta = ((1/n) * sum_1 - (1/n) * sum_2 * mean)/((1/n) * sum_3)
+    return beta
+end
+
+function indicator(Y::Real, y::Real)
+    if Y <= y
+        return 1
+    else
+        return 0
+    end
+end
+
+function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
+    n = length(samples)
+    sum = 0
+    for (σ, devation) in samples
+        sum += indicator(devation, y)
+    end
+    nmc = (1/n) * sum
+    b = beta(y, samples, V)
+    fcv = nmc - b * (calculate_mean_miss(V, samples)-mean)
+    return fcv
 end
 
 
