@@ -4,7 +4,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
-export beta, Fcv
+export beta, Fcv, hello, FcvW, inverse_fcv
 
 import Random
 using Distributions
@@ -143,7 +143,40 @@ function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, m
     return fcv
 end
 
+function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    n = length(samples)
+    sum_1 = 0
+    Fcv = 0
+    mean = calculate_mean_miss(v, samples)
+    for (σ, _) in samples
+        sum_1 += (v(σ) - mean) ^ 2
+    end
+    for (σ, devation) in samples
+        Wi = 1/n + (mean - v(σ)) * (mean - m)/sum_1
+        Fcv += Wi * indicator(devation, y)
+    end
+    return Fcv
+end
 
+function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    n = length(samples)
+    sum_1 = 0
+    sum_2 = 0
+    y = 0
+    mean = calculate_mean_miss(v, samples)
+    for (σ, _) in samples
+        sum_1 += (v(σ) - mean) ^ 2
+    end
+    for (σ, devation) in samples
+        Wi = 1/n + (mean - v(σ)) * (mean - m)/sum_1
+        sum_2 += Wi
+        if sum_2 >= p
+            y = devation
+            break
+        end
+    end
+    return y
+end
 # function visualize(a::Automaton, z_0:Vector{<:Real}, bv::BitVector)
 #     x = length(bv)
 #     y = deviation(a, z_0, )
