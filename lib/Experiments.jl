@@ -94,6 +94,11 @@ function missfirst(σ::BitVector)
     f === nothing ? 101 : f
 end
 
+"""
+    calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
+
+    This function calulates the mean value of the Control Variates
+"""
 function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
     total_miss = 0
     num_samples = length(samples)
@@ -108,6 +113,11 @@ function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float
     return mean_miss
 end
 
+"""
+    beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
+
+    This function calculates the Control Variates estimator
+"""
 function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
     n = length(samples)
     sum_1 = 0;
@@ -123,6 +133,11 @@ function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
     return beta
 end
 
+"""
+    indicator(Y::Real, y::Real)
+
+    This is a function for the indicator function, returns 1 when Y <=y, returns 0 otherwise
+"""
 function indicator(Y::Real, y::Real)
     if Y <= y
         return 1
@@ -131,6 +146,11 @@ function indicator(Y::Real, y::Real)
     end
 end
 
+"""
+    Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
+
+    This function calulates the CDF for control variates estimator beta
+"""
 function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
     n = length(samples)
     sum = 0
@@ -142,6 +162,12 @@ function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, m
     fcv = nmc - b * (calculate_mean_miss(V, samples)-mean)
     return fcv
 end
+
+"""
+    FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+
+    This function calulates the CDF for control variates with estimator W
+"""
 
 function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
@@ -157,6 +183,12 @@ function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::F
     end
     return Fcv
 end
+
+"""
+    inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+
+    This function calulates the inverse function of CV CDF
+"""
 
 function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
