@@ -168,7 +168,6 @@ end
 
     This function calulates the CDF for control variates with estimator W
 """
-
 function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
@@ -189,7 +188,6 @@ end
 
     This function calulates the inverse function of CV CDF
 """
-
 function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
@@ -210,6 +208,11 @@ function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}
     return y
 end
 
+"""
+    var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
+
+    Variance function
+"""
 function var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
     ret = 0
@@ -222,6 +225,11 @@ function var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
     return ret
 end
 
+"""
+    cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+
+    Covariance function
+"""
 function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
     ret = 0
@@ -239,27 +247,52 @@ function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Functi
     return ret
 end
 
+"""
+    Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+
+    Function for Psi square
+"""
 function Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     Psi = p*(1-p) - ((cov(quantile,samples,v))^2)/var(samples,v)
     return Psi
 end
 
+"""
+    Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+
+    Function for Eta
+"""
 function Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     Eta = (inverse_fcv(p + Delta, m, samples, v) - inverse_fcv(p - Delta, m, samples, v))/(2 * Delta)
     return Eta
 end
 
+"""
+    Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+
+    Function for Tau square
+"""
 function Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     Tau = Psi2_cv(quantile, p, samples, v) * (Eta(Delta, p, m, samples, v))^2
     return Tau
 end
 
+"""
+    z_alpha(alpha::Real)
+
+    Function for the inverse of CDF for Normal Distribution
+"""
 function z_alpha(alpha::Real)
     d = Normal(0.0,1.0)
     z_alpha = quantile.(d,[1-alpha/2])
     return z_alpha[1]
 end
 
+"""
+    confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+
+    Function that calculates the confidence interval for CV quantile
+"""
 function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
     diff = z_alpha(alpha) * sqrt(Tau2(quantile, Delta, p, m, samples, v))/sqrt(n)
