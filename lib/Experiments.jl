@@ -4,7 +4,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
-export beta, Fcv, hello, FcvW, inverse_fcv
+export beta, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_alpha, confidence_interval
 
 import Random
 using Distributions
@@ -209,6 +209,66 @@ function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}
     end
     return y
 end
+
+function var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    n = length(samples)
+    ret = 0
+    sum_1 = 0
+    mean = calculate_mean_miss(v, samples)
+    for (σ, _) in samples
+        sum_1 += (v(σ)- mean) ^ 2
+    end
+    ret = 1/(n-1) * sum_1
+    return ret
+end
+
+function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    n = length(samples)
+    ret = 0
+    sum_1 = 0
+    sum_2 = 0
+    mean = calculate_mean_miss(v, samples)
+    for (_, deviation) in samples
+        sum_2 += indicator(deviation, quantile)
+    end
+    mean2 = sum_2 / n
+    for (σ, deviation) in samples
+        sum_1 += (v(σ)- mean) * (deviation - mean2)
+    end
+    ret = 1/(n-1) * sum_1
+    return ret
+end
+
+function Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    Psi = p*(1-p) - ((cov(quantile,samples,v))^2)/var(samples,v)
+    return Psi
+end
+
+function Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    Eta = (inverse_fcv(p + Delta, m, samples, v) - inverse_fcv(p - Delta, m, samples, v))/(2 * Delta)
+    return Eta
+end
+
+function Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    Tau = Psi2_cv(quantile, p, samples, v) * (Eta(Delta, p, m, samples, v))^2
+    return Tau
+end
+
+function z_alpha(alpha::Real)
+    d = Normal(0.0,1.0)
+    z_alpha = quantile.(d,[1-alpha/2])
+    return z_alpha[1]
+end
+
+function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    n = length(samples)
+    diff = z_alpha(alpha) * sqrt(Tau2(quantile, Delta, p, m, samples, v))/sqrt(n)
+    i1 = quantile - diff
+    i2 = quantile + diff
+    return [i1, i2, diff]
+end
+
+
 # function visualize(a::Automaton, z_0:Vector{<:Real}, bv::BitVector)
 #     x = length(bv)
 #     y = deviation(a, z_0, )
