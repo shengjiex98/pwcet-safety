@@ -298,7 +298,7 @@ function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::
     diff = z_alpha(alpha) * sqrt(Tau2(quantile, Delta, p, m, samples, v))/sqrt(n)
     i1 = quantile - diff
     i2 = quantile + diff
-    return [i1, i2, diff]
+    return [i1, i2, 2*diff]
 end
 
 
