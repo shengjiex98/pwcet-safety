@@ -95,9 +95,9 @@ function missfirst(σ::BitVector)
 end
 
 """
-    calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
+    calculate_mean_miss(V, samples)
 
-    This function calulates the mean value of the Control Variates
+Calulate the mean value of the Control Variates with variate function V and given samples.
 """
 function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
     total_miss = 0
@@ -114,9 +114,10 @@ function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float
 end
 
 """
-    beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
+    beta(y, samples, V)
 
-    This function calculates the Control Variates estimator
+Calculate the Control Variates estimator beta with given samples, 
+control variate function V and desired deviation y.
 """
 function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
     n = length(samples)
@@ -134,9 +135,9 @@ function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
 end
 
 """
-    indicator(Y::Real, y::Real)
+    indicator(Y, y)
 
-    This is a function for the indicator function, returns 1 when Y <=y, returns 0 otherwise
+Indicator function, returns 1 when Y <=y, returns 0 otherwise.
 """
 function indicator(Y::Real, y::Real)
     if Y <= y
@@ -147,9 +148,9 @@ function indicator(Y::Real, y::Real)
 end
 
 """
-    Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
+    Fcv(y, samples, V)
 
-    This function calulates the CDF for control variates estimator beta
+Calulate the CDF for control variates estimator beta.
 """
 function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
     n = length(samples)
@@ -166,7 +167,7 @@ end
 """
     FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
 
-    This function calulates the CDF for control variates with estimator W
+Calulates the CDF for control variates with estimator W.
 """
 function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
@@ -184,9 +185,10 @@ function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::F
 end
 
 """
-    inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    inverse_fcv(p, m, samples, v)
 
-    This function calulates the inverse function of CV CDF
+Calulates the p-quantile using the given p, theoratical mean value of control variate function,
+the given sample and control variate function v.
 """
 function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     n = length(samples)
@@ -209,9 +211,9 @@ function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}
 end
 
 """
-    var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    var(samples,v)
 
-    Variance function
+Caluate the variance of the control variates in the given sample.
 """
 function var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
@@ -228,7 +230,7 @@ end
 """
     cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
 
-    Covariance function
+Calculate the covariance for quantile and control variates in the given sample.
 """
 function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
@@ -248,9 +250,10 @@ function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Functi
 end
 
 """
-    Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    Psi2_cv(quantile,p,samples,v)
 
-    Function for Psi square
+Calculate the valure of ψ square of control variates. This value is used to calculate τ
+Input the p-quantile, p, given samples and control variate function.
 """
 function Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     Psi = p*(1-p) - ((cov(quantile,samples,v))^2)/var(samples,v)
@@ -258,9 +261,11 @@ function Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64
 end
 
 """
-    Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    Eta(Delta, p, m, samples, v)
 
-    Function for Eta
+Calculate the value of η using a user-specified bandwidth Delta, p, theoratical mean value of 
+control variate function, the given sample and control variate function v. 
+This value is used to calculate τ
 """
 function Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
     Eta = (inverse_fcv(p + Delta, m, samples, v) - inverse_fcv(p - Delta, m, samples, v))/(2 * Delta)
@@ -268,9 +273,11 @@ function Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Flo
 end
 
 """
-    Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    Tau2(quantile,Delta,p,m,samples,v)
 
-    Function for Tau square
+Calculate the value of τ square with p-quantile, user-specified bandwidth Delta, p, theoratical mean value of 
+control variate function, the given sample and control variate function v. τ is used to calculate the confidence
+interval.
 """
 function Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     Tau = Psi2_cv(quantile, p, samples, v) * (Eta(Delta, p, m, samples, v))^2
@@ -278,9 +285,10 @@ function Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{B
 end
 
 """
-    z_alpha(alpha::Real)
+    z_alpha(alpha)
 
-    Function for the inverse of CDF for Normal Distribution
+Calculate the inverse of CDF for Normal Distribution for a desired confidence level alpha.
+This value is used to calculate the confidence interval.
 """
 function z_alpha(alpha::Real)
     d = Normal(0.0,1.0)
@@ -289,9 +297,12 @@ function z_alpha(alpha::Real)
 end
 
 """
-    confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+    confidence_interval(alpha, quantile, Delta, p, m, samples, v)
 
-    Function that calculates the confidence interval for CV quantile
+Calculate the confidence interval given the desired confidence level alpha, the p-quantile, 
+a user-specified bandwidth Delta, p, theoratical mean value of control variate function, 
+the given sample and control variate function v. Output a 3 element vector with the first
+two being the confidence interval and the last element being the magnitude of the interval.
 """
 function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
     n = length(samples)
