@@ -120,9 +120,10 @@ function ev_consc_miss_prep(n, p)
     for i in 2:n
         ## This line is invalid: a sequence can have multiple separated misses
         # T[i, 1]   = i * p^(i-1) * (1-p)
-        T[i, i-1] = 2 * p * (1-p)^(i-1)
+        ## This line can be covered by the loop below
+        # T[i, i-1] = 2 * p * (1-p)^(i-1)
         # Assuming the **first** longest sequence starts at k and has length j
-        for j in 1:i-2, k in 1:i-j+1
+        for j in 1:i-1, k in 1:i-j+1
             if k == 1
                 T[i, j] += T[j, j] * p * C[i-j-1, j]
             elseif k == (i-j+1)
@@ -133,7 +134,7 @@ function ev_consc_miss_prep(n, p)
                 T[i, j] += C[k-2, j-1] * p * T[j, j] * p * C[i-k-j, j]
             end
         end
-        for j in 1:i-1
+        for j in 1:i
             C[i, j] = C[i, j-1] + T[i, j]
         end
     end
