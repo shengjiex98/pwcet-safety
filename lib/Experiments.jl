@@ -158,16 +158,16 @@ function missfirst(σ::BitVector, n::Integer)
 end
 
 """
-    calculate_mean_miss(V, samples)
+    calculate_mean_miss(v, samples)
 
-Calulate the mean value of the Control Variates with variate function V and given samples.
+Calulate the mean value of the control variates with variate function v and given samples.
 """
 function calculate_mean_miss(v::Function, samples::Vector{Tuple{BitVector,Float64}})
     ## The following section can be simplified by using a map
     # total_miss = 0
     # num_samples = length(samples)
     # for (σ, _) in samples
-    #     miss_value = V(σ)
+    #     miss_value = v(σ)
     #     total_miss += miss_value
     # end
     # mean_miss = total_miss / num_samples
@@ -179,21 +179,21 @@ function calculate_mean_miss(v::Function, samples::Vector{Tuple{BitVector,Float6
 end
 
 """
-    β(y, samples, V)
+    β(y, samples, v)
 
-Calculate the Control Variates estimator β with given samples, 
-control variate function V and desired deviation y.
+Calculate the control variates estimator β with given samples, 
+control variate function v and desired deviation y.
 """
-function β(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function)
+function β(y::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
     sum_2 = 0
     sum_3 = 0
-    mean = calculate_mean_miss(V, samples)
+    mean = calculate_mean_miss(v, samples)
     for (σ, devation) in samples
-        sum_1 += indicator(devation, y) * V(σ)
+        sum_1 += indicator(devation, y) * v(σ)
         sum_2 += indicator(devation, y)
-        sum_3 += (V(σ) - mean)^2
+        sum_3 += (v(σ) - mean)^2
     end
     β = ((1 / n) * sum_1 - (1 / n) * sum_2 * mean) / ((1 / n) * sum_3)
     return β
@@ -210,19 +210,19 @@ function indicator(Y::Real, y::Real)
 end
 
 """
-    fcv(y, samples, V)
+    fcv(y, samples, v)
 
 Calulate the CDF for control variates estimator β.
 """
-function fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function, mean::Real)
+function fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function, mean::Real)
     n = length(samples)
     sum = 0
     for (σ, devation) in samples
         sum += indicator(devation, y)
     end
     nmc = (1 / n) * sum
-    β = β(y, samples, V)
-    fcv = nmc - β * (calculate_mean_miss(V, samples) - mean)
+    β = β(y, samples, v)
+    fcv = nmc - β * (calculate_mean_miss(v, samples) - mean)
     return fcv
 end
 
