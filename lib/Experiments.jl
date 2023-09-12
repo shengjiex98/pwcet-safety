@@ -2,15 +2,14 @@
 module Experiments
 
 export SamplerPWCET
-export single_run_deviation, sim, binomial_prob, lr_test, lr_test_2
+export single_run_deviation, generate_samples, binomial_prob, lr_test, lr_test_2
 
 import Random
 using Distributions
 using RealTimeScheduling
 using ControlTimingSafety
 
-# struct SamplerPWCET <: Random.Sampler{BitVector}
-struct SamplerPWCET <: SamplerWeaklyHard
+struct SamplerPWCET <: Random.Sampler{BitVector}
     p::Real
     H::Integer
 end
@@ -38,7 +37,7 @@ function single_run_deviation(a::Automaton, z_0::AbstractVector{Float64}, input:
     maximum(deviation(a, z_0, reachable))
 end
 
-function sim(a::Automaton, z0::AbstractVector{<:Real}, p::Real, n::Integer; H::Integer=100)
+function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, p::Real, n::Integer; H::Integer=100)
     sp = SamplerPWCET(p, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     for i in 1:n
