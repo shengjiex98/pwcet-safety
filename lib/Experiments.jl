@@ -4,7 +4,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
-export beta, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_alpha, confidence_interval
+export beta, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_alpha, confidence_interval, bin_list
 
 import Random
 using Distributions
@@ -85,13 +85,28 @@ function missrow(σ::BitVector)
     maxcount
 end
 
+function missrow(σ::BitVector, n::Integer)
+    k = σ[1:n]
+    missrow(k)
+end
+
 function misstotal(σ::BitVector)
     reduce((a, b) -> a + (1 - b), σ; init=0)
+end
+
+function misstotal(σ::BitVector, n::Integer)
+    k = σ[1:n]
+    misstotal(k)
 end
 
 function missfirst(σ::BitVector)
     f = findfirst(σ .== 0)
     f === nothing ? 101 : f
+end
+
+function missfirst(σ::BitVector, n::Integer)
+    k = σ[1:n]
+    missfirst(k)
 end
 
 """
@@ -312,7 +327,22 @@ function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::
     return [i1, i2, 2*diff]
 end
 
-
+function bin_list(n::Integer)
+    if n == 1
+        return [[1],[0]]
+    else
+        result = Vector{BitVector}(undef, 0)
+        previous = bin_list(n-1)
+        for vector in previous
+            vector2 = copy(vector)
+            push!(vector, 1)
+            push!(vector2, 0)
+            push!(result, vector)
+            push!(result, vector2)
+        end
+        return result
+    end
+end
 # function visualize(a::Automaton, z_0:Vector{<:Real}, bv::BitVector)
 #     x = length(bv)
 #     y = deviation(a, z_0, )
