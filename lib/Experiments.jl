@@ -162,17 +162,19 @@ end
 
 Calulate the mean value of the Control Variates with variate function V and given samples.
 """
-function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector,Float64}})
-    total_miss = 0
-    num_samples = length(samples)
+function calculate_mean_miss(v::Function, samples::Vector{Tuple{BitVector,Float64}})
+    ## The following section can be simplified by using a map
+    # total_miss = 0
+    # num_samples = length(samples)
+    # for (σ, _) in samples
+    #     miss_value = V(σ)
+    #     total_miss += miss_value
+    # end
+    # mean_miss = total_miss / num_samples
 
-    for (σ, _) in samples
-        miss_value = 0
-        miss_value = V(σ)
-        total_miss += miss_value
-    end
+    miss_values = map((σ, _) -> v(σ), samples)
+    mean_miss = mean(miss_values)
 
-    mean_miss = total_miss / num_samples
     return mean_miss
 end
 
@@ -200,14 +202,11 @@ end
 """
     indicator(Y, y)
 
-Indicator function, returns 1 when Y <=y, returns 0 otherwise.
+Indicator function, returns 1 when Y <= y, returns 0 otherwise.
 """
 function indicator(Y::Real, y::Real)
-    if Y <= y
-        return 1
-    else
-        return 0
-    end
+    # Using explicit 1/0 returns for indicator
+    return if Y <= y 1 else 0 end
 end
 
 """
