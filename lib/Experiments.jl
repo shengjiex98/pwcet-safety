@@ -4,7 +4,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
-export beta, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_alpha, confidence_interval, bin_list
+export β, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_α, confidence_interval, bin_list
 export ev_consc_miss_prep
 
 import Random
@@ -44,29 +44,29 @@ end
 
 function binomial_prob(n::Integer, p::Real, x::Integer)
     @boundscheck 0 <= p <= 1 || throw(ArgumentError("p has to be within 0 and 1"))
-    binomial(n, x) * p^x * (1-p)^(n-x)
+    binomial(n, x) * p^x * (1 - p)^(n - x)
 end
 
 function lr_test(θ::Real, n::Integer, x::Integer)
-    @boundscheck 0 <= θ <= 1 || throw(ArgumentError("theta has to be within 0 and 1"))
+    @boundscheck 0 <= θ <= 1 || throw(ArgumentError("θ has to be within 0 and 1"))
     # Calculate the θ value from observed data
     observed = x / n
     θ0 = min(observed, θ)
-    (θ0^x * (1-θ0)^(n-x)) / (observed^x * (1-observed)^(n-x))
+    (θ0^x * (1 - θ0)^(n - x)) / (observed^x * (1 - observed)^(n - x))
 end
 
 function lr_test_2(θ::Real, n::Integer, ϵ::Real)
-    @boundscheck 0 <= θ <= 1 || throw(ArgumentError("theta has to be within 0 and 1"))
+    @boundscheck 0 <= θ <= 1 || throw(ArgumentError("θ has to be within 0 and 1"))
     # Calculate the θ value from observed data
     x = round(Int64, n * θ)
     observed = x / n
-    θ0 = [θ-ϵ, θ+ϵ]
-    maximum(@. (θ0/observed)^x * ((1-θ0)/(1-observed))^(n-x))
+    θ0 = [θ - ϵ, θ + ϵ]
+    maximum(@. (θ0 / observed)^x * ((1 - θ0) / (1 - observed))^(n - x))
 end
 
 function sim(a::Automaton, z0::AbstractVector{<:Real}, p::Real, n::Integer; H::Integer=100)
     sp = SamplerPWCET(p, H)
-    samples = Vector{Tuple{BitVector, Float64}}(undef, n)
+    samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     for i in 1:n
         σ = rand(sp)
         samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ))
@@ -107,26 +107,26 @@ function missfirst(σ::BitVector)
 end
 
 function ev_consc_miss_prep(n, p)
-    T = OffsetArray(zeros(n+1, n+1), 0:n, 0:n)
-    C = OffsetArray(zeros(n+1, n+1), 0:n, 0:n)
-    
+    T = OffsetArray(zeros(n + 1, n + 1), 0:n, 0:n)
+    C = OffsetArray(zeros(n + 1, n + 1), 0:n, 0:n)
+
     # Initializing
     for i in 0:n
         # No misses
         T[i, 0] = p^i
         C[i, 0] = T[i, 0]
-        
+
         # All misses
-        T[i, i] = (1-p)^i
+        T[i, i] = (1 - p)^i
         C[i, i] = 1
-        
+
         # Convenience shortcuts
         for j in i+1:n
             T[i, j] = 0
             C[i, j] = 1
         end
     end
-    
+
     for i in 2:n
         ## This line is invalid: a sequence can have multiple separated misses
         # T[i, 1]   = i * p^(i-1) * (1-p)
@@ -136,7 +136,7 @@ function ev_consc_miss_prep(n, p)
         for j in 1:i-1, k in 1:i-j+1
             if k == 1
                 T[i, j] += T[j, j] * p * C[i-j-1, j]
-            elseif k == (i-j+1)
+            elseif k == (i - j + 1)
                 # Since the sequence is at the end, earlier consecutive misses 
                 # are at most j-1 in length.
                 T[i, j] += C[i-j-1, j-1] * p * T[j, j]
@@ -148,7 +148,7 @@ function ev_consc_miss_prep(n, p)
             C[i, j] = C[i, j-1] + T[i, j]
         end
     end
-    
+
     return T, C
 end
 
@@ -162,7 +162,7 @@ end
 
 Calulate the mean value of the Control Variates with variate function V and given samples.
 """
-function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float64}})
+function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector,Float64}})
     total_miss = 0
     num_samples = length(samples)
 
@@ -171,30 +171,30 @@ function calculate_mean_miss(V::Function, samples::Vector{Tuple{BitVector, Float
         miss_value = V(σ)
         total_miss += miss_value
     end
-    
+
     mean_miss = total_miss / num_samples
     return mean_miss
 end
 
 """
-    beta(y, samples, V)
+    β(y, samples, V)
 
-Calculate the Control Variates estimator beta with given samples, 
+Calculate the Control Variates estimator β with given samples, 
 control variate function V and desired deviation y.
 """
-function beta(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function)
+function β(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function)
     n = length(samples)
-    sum_1 = 0;
-    sum_2 = 0;
-    sum_3 = 0;
+    sum_1 = 0
+    sum_2 = 0
+    sum_3 = 0
     mean = calculate_mean_miss(V, samples)
     for (σ, devation) in samples
         sum_1 += indicator(devation, y) * V(σ)
         sum_2 += indicator(devation, y)
-        sum_3 += (V(σ) - mean) ^ 2
+        sum_3 += (V(σ) - mean)^2
     end
-    beta = ((1/n) * sum_1 - (1/n) * sum_2 * mean)/((1/n) * sum_3)
-    return beta
+    β = ((1 / n) * sum_1 - (1 / n) * sum_2 * mean) / ((1 / n) * sum_3)
+    return β
 end
 
 """
@@ -213,17 +213,17 @@ end
 """
     Fcv(y, samples, V)
 
-Calulate the CDF for control variates estimator beta.
+Calulate the CDF for control variates estimator β.
 """
-function Fcv(y::Real, samples::Vector{Tuple{BitVector, Float64}}, V::Function, mean::Real)
+function Fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function, mean::Real)
     n = length(samples)
     sum = 0
     for (σ, devation) in samples
         sum += indicator(devation, y)
     end
-    nmc = (1/n) * sum
-    b = beta(y, samples, V)
-    fcv = nmc - b * (calculate_mean_miss(V, samples)-mean)
+    nmc = (1 / n) * sum
+    β = β(y, samples, V)
+    fcv = nmc - β * (calculate_mean_miss(V, samples) - mean)
     return fcv
 end
 
@@ -232,16 +232,16 @@ end
 
 Calulates the CDF for control variates with estimator W.
 """
-function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
     Fcv = 0
     mean = calculate_mean_miss(v, samples)
     for (σ, _) in samples
-        sum_1 += (v(σ) - mean) ^ 2
+        sum_1 += (v(σ) - mean)^2
     end
     for (σ, devation) in samples
-        Wi = 1/n + (mean - v(σ)) * (mean - m)/sum_1
+        Wi = 1 / n + (mean - v(σ)) * (mean - m) / sum_1
         Fcv += Wi * indicator(devation, y)
     end
     return Fcv
@@ -253,17 +253,17 @@ end
 Calulates the p-quantile using the given p, theoratical mean value of control variate function,
 the given sample and control variate function v.
 """
-function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+function inverse_fcv(p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
     sum_2 = 0
     y = 0
     mean = calculate_mean_miss(v, samples)
     for (σ, _) in samples
-        sum_1 += (v(σ) - mean) ^ 2
+        sum_1 += (v(σ) - mean)^2
     end
     for (σ, devation) in samples
-        Wi = 1/n + (mean - v(σ)) * (mean - m)/sum_1
+        Wi = 1 / n + (mean - v(σ)) * (mean - m) / sum_1
         sum_2 += Wi
         if sum_2 >= p
             y = devation
@@ -278,15 +278,15 @@ end
 
 Caluate the variance of the control variates in the given sample.
 """
-function var(samples::Vector{Tuple{BitVector, Float64}},v::Function)
+function var(samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     ret = 0
     sum_1 = 0
     mean = calculate_mean_miss(v, samples)
     for (σ, _) in samples
-        sum_1 += (v(σ)- mean) ^ 2
+        sum_1 += (v(σ) - mean)^2
     end
-    ret = 1/(n-1) * sum_1
+    ret = 1 / (n - 1) * sum_1
     return ret
 end
 
@@ -295,7 +295,7 @@ end
 
 Calculate the covariance for quantile and control variates in the given sample.
 """
-function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+function cov(quantile::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     ret = 0
     sum_1 = 0
@@ -306,9 +306,9 @@ function cov(quantile::Real,samples::Vector{Tuple{BitVector, Float64}},v::Functi
     end
     mean2 = sum_2 / n
     for (σ, deviation) in samples
-        sum_1 += (v(σ)- mean) * (deviation - mean2)
+        sum_1 += (v(σ) - mean) * (deviation - mean2)
     end
-    ret = 1/(n-1) * sum_1
+    ret = 1 / (n - 1) * sum_1
     return ret
 end
 
@@ -318,69 +318,71 @@ end
 Calculate the valure of ψ square of control variates. This value is used to calculate τ
 Input the p-quantile, p, given samples and control variate function.
 """
-function Psi2_cv(quantile::Real,p::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
-    Psi = p*(1-p) - ((cov(quantile,samples,v))^2)/var(samples,v)
-    return Psi
+function ψ2_cv(quantile::Real, p::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+    ψ = p * (1 - p) - (cov(quantile, samples, v)^2) / var(samples, v)
+    return ψ
 end
 
-"""
-    Eta(Delta, p, m, samples, v)
 
-Calculate the value of η using a user-specified bandwidth Delta, p, theoratical mean value of 
+"""
+    η(δ, p, m, samples, v)
+
+Calculate the value of η using a user-specified bandwidth δ, p, theoratical mean value of 
 control variate function, the given sample and control variate function v. 
 This value is used to calculate τ
 """
-function Eta(Delta::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
-    Eta = (inverse_fcv(p + Delta, m, samples, v) - inverse_fcv(p - Delta, m, samples, v))/(2 * Delta)
-    return Eta
+function η(δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+    η = (inverse_fcv(p + δ, m, samples, v) - inverse_fcv(p - δ, m, samples, v)) / (2 * δ)
+    return η
 end
 
 """
-    Tau2(quantile,Delta,p,m,samples,v)
+    Tau2(quantile,δ,p,m,samples,v)
 
-Calculate the value of τ square with p-quantile, user-specified bandwidth Delta, p, theoratical mean value of 
+Calculate the value of τ square with p-quantile, user-specified bandwidth δ, p, theoratical mean value of 
 control variate function, the given sample and control variate function v. τ is used to calculate the confidence
 interval.
 """
-function Tau2(quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
-    Tau = Psi2_cv(quantile, p, samples, v) * (Eta(Delta, p, m, samples, v))^2
+function Tau2(quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+    Tau = Psi2_cv(quantile, p, samples, v) * (η(δ, p, m, samples, v))^2
     return Tau
 end
 
-"""
-    z_alpha(alpha)
 
-Calculate the inverse of CDF for Normal Distribution for a desired confidence level alpha.
+"""
+    z_α(α)
+
+Calculate the inverse of CDF for Normal Distribution for a desired confidence level α.
 This value is used to calculate the confidence interval.
 """
-function z_alpha(alpha::Real)
-    d = Normal(0.0,1.0)
-    z_alpha = quantile.(d,[1-alpha/2])
-    return z_alpha[1]
+function z_α(α::Real)
+    d = Normal(0.0, 1.0)
+    z_α = quantile.(d, [1 - α / 2])
+    return z_α[1]
 end
 
 """
-    confidence_interval(alpha, quantile, Delta, p, m, samples, v)
+    confidence_interval(α, quantile, δ, p, m, samples, v)
 
-Calculate the confidence interval given the desired confidence level alpha, the p-quantile, 
-a user-specified bandwidth Delta, p, theoratical mean value of control variate function, 
+Calculate the confidence interval given the desired confidence level α, the p-quantile, 
+a user-specified bandwidth δ, p, theoratical mean value of control variate function, 
 the given sample and control variate function v. Output a 3 element vector with the first
 two being the confidence interval and the last element being the magnitude of the interval.
 """
-function confidence_interval(alpha::Real, quantile::Real,Delta::Real,p::Real,m::Real,samples::Vector{Tuple{BitVector, Float64}},v::Function)
+function confidence_interval(α::Real, quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
-    diff = z_alpha(alpha) * sqrt(Tau2(quantile, Delta, p, m, samples, v))/sqrt(n)
+    diff = z_α(α) * sqrt(Tau2(quantile, δ, p, m, samples, v)) / sqrt(n)
     i1 = quantile - diff
     i2 = quantile + diff
-    return [i1, i2, 2*diff]
+    return [i1, i2, 2 * diff]
 end
 
 function bin_list(n::Integer)
     if n == 1
-        return [[1],[0]]
+        return [[1], [0]]
     else
         result = Vector{BitVector}(undef, 0)
-        previous = bin_list(n-1)
+        previous = bin_list(n - 1)
         for vector in previous
             vector2 = copy(vector)
             push!(vector, 1)
