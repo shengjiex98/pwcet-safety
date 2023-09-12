@@ -4,7 +4,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
-export β, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_α, confidence_interval, bin_list
+export β, fcv, hello, fcvW, inverse_fcv, ψ2_cv, τ2, z_α, confidence_interval, bin_list
 export ev_consc_miss_prep
 
 import Random
@@ -211,11 +211,11 @@ function indicator(Y::Real, y::Real)
 end
 
 """
-    Fcv(y, samples, V)
+    fcv(y, samples, V)
 
 Calulate the CDF for control variates estimator β.
 """
-function Fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function, mean::Real)
+function fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function, mean::Real)
     n = length(samples)
     sum = 0
     for (σ, devation) in samples
@@ -228,23 +228,23 @@ function Fcv(y::Real, samples::Vector{Tuple{BitVector,Float64}}, V::Function, me
 end
 
 """
-    FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
+    fcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector, Float64}}, v::Function)
 
 Calulates the CDF for control variates with estimator W.
 """
-function FcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+function fcvW(y::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     sum_1 = 0
-    Fcv = 0
+    fcv = 0
     mean = calculate_mean_miss(v, samples)
     for (σ, _) in samples
         sum_1 += (v(σ) - mean)^2
     end
     for (σ, devation) in samples
         Wi = 1 / n + (mean - v(σ)) * (mean - m) / sum_1
-        Fcv += Wi * indicator(devation, y)
+        fcv += Wi * indicator(devation, y)
     end
-    return Fcv
+    return fcv
 end
 
 """
@@ -313,7 +313,7 @@ function cov(quantile::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Funct
 end
 
 """
-    Psi2_cv(quantile,p,samples,v)
+    ψ2_cv(quantile,p,samples,v)
 
 Calculate the valure of ψ square of control variates. This value is used to calculate τ
 Input the p-quantile, p, given samples and control variate function.
@@ -337,15 +337,15 @@ function η(δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}
 end
 
 """
-    Tau2(quantile,δ,p,m,samples,v)
+    τ2(quantile,δ,p,m,samples,v)
 
 Calculate the value of τ square with p-quantile, user-specified bandwidth δ, p, theoratical mean value of 
 control variate function, the given sample and control variate function v. τ is used to calculate the confidence
 interval.
 """
-function Tau2(quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
-    Tau = Psi2_cv(quantile, p, samples, v) * (η(δ, p, m, samples, v))^2
-    return Tau
+function τ2(quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+    τ = ψ2_cv(quantile, p, samples, v) * (η(δ, p, m, samples, v))^2
+    return τ
 end
 
 
@@ -371,7 +371,7 @@ two being the confidence interval and the last element being the magnitude of th
 """
 function confidence_interval(α::Real, quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
-    diff = z_α(α) * sqrt(Tau2(quantile, δ, p, m, samples, v)) / sqrt(n)
+    diff = z_α(α) * sqrt(τ2(quantile, δ, p, m, samples, v)) / sqrt(n)
     i1 = quantile - diff
     i2 = quantile + diff
     return [i1, i2, 2 * diff]
