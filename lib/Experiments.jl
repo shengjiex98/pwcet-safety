@@ -5,11 +5,13 @@ export SamplerPWCET
 export single_run_deviation, binomial_prob, lr_test, lr_test_2
 export sim, missrow, misstotal, missfirst, calculate_mean_miss
 export beta, Fcv, hello, FcvW, inverse_fcv, Psi2_cv, Tau2, z_alpha, confidence_interval, bin_list
+export ev_consc_miss_prep
 
 import Random
 using Distributions
 using RealTimeScheduling
 using ControlTimingSafety
+using OffsetArrays
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
@@ -102,6 +104,52 @@ end
 function missfirst(σ::BitVector)
     f = findfirst(σ .== 0)
     f === nothing ? 101 : f
+end
+
+function ev_consc_miss_prep(n, p)
+    T = OffsetArray(zeros(n+1, n+1), 0:n, 0:n)
+    C = OffsetArray(zeros(n+1, n+1), 0:n, 0:n)
+    
+    # Initializing
+    for i in 0:n
+        # No misses
+        T[i, 0] = p^i
+        C[i, 0] = T[i, 0]
+        
+        # All misses
+        T[i, i] = (1-p)^i
+        C[i, i] = 1
+        
+        # Convenience shortcuts
+        for j in i+1:n
+            T[i, j] = 0
+            C[i, j] = 1
+        end
+    end
+    
+    for i in 2:n
+        ## This line is invalid: a sequence can have multiple separated misses
+        # T[i, 1]   = i * p^(i-1) * (1-p)
+        ## This line can be covered by the loop below
+        # T[i, i-1] = 2 * p * (1-p)^(i-1)
+        # Assuming the **first** longest sequence starts at k and has length j
+        for j in 1:i-1, k in 1:i-j+1
+            if k == 1
+                T[i, j] += T[j, j] * p * C[i-j-1, j]
+            elseif k == (i-j+1)
+                # Since the sequence is at the end, earlier consecutive misses 
+                # are at most j-1 in length.
+                T[i, j] += C[i-j-1, j-1] * p * T[j, j]
+            else
+                T[i, j] += C[k-2, j-1] * p * T[j, j] * p * C[i-k-j, j]
+            end
+        end
+        for j in 1:i
+            C[i, j] = C[i, j-1] + T[i, j]
+        end
+    end
+    
+    return T, C
 end
 
 function missfirst(σ::BitVector, n::Integer)
