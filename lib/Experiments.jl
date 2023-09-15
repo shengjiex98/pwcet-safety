@@ -8,8 +8,10 @@ import Random
 using Distributions
 using RealTimeScheduling
 using ControlTimingSafety
+using Base.Threads
 
-struct SamplerPWCET <: Random.Sampler{BitVector}
+# struct SamplerPWCET <: Random.Sampler{BitVector}
+struct SamplerPWCET <: SamplerWeaklyHard
     p::Real
     H::Integer
 end
@@ -40,7 +42,7 @@ end
 function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, p::Real, n::Integer; H::Integer=100)
     sp = SamplerPWCET(p, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
-    for i in 1:n
+    Threads.@threads for i in 1:n
         σ = rand(sp)
         samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ))
     end

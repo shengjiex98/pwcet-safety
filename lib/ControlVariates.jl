@@ -35,7 +35,7 @@ end
 
 function missfirst(σ::BitVector)
     f = findfirst(σ .== 0)
-    f === nothing ? 101 : f
+    f === nothing ? length(σ)+1 : f
 end
 
 function missfirst(σ::BitVector, n::Integer)
@@ -90,6 +90,7 @@ function calculate_missrow_prob(n, p)
         # T[i, 1]   = i * p^(i-1) * (1-p)
         ## This line can be covered by the loop below
         # T[i, i-1] = 2 * p * (1-p)^(i-1)
+        
         # Assuming the **first** longest sequence starts at k and has length j
         for j in 1:i-1, k in 1:i-j+1
             if k == 1
@@ -299,7 +300,8 @@ a user-specified bandwidth δ, p, theoratical mean value of control variate func
 the given sample and control variate function v. Output a 3 element vector with the first
 two being the confidence interval and the last element being the magnitude of the interval.
 """
-function confidence_interval(α::Real, quantile::Real, δ::Real, p::Real, m::Real, samples::Vector{Tuple{BitVector,Float64}}, v::Function)
+function confidence_interval(α::Real, quantile::Real, δ::Real, p::Real, m::Real, 
+        samples::Vector{Tuple{BitVector,Float64}}, v::Function)
     n = length(samples)
     diff = z_α(α) * sqrt(τ2(quantile, δ, p, m, samples, v)) / sqrt(n)
     i1 = quantile - diff
