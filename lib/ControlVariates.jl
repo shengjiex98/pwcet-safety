@@ -5,6 +5,7 @@ export calculate_mean_cv, calculate_missrow_prob
 export β, fcv, fcvW, inverse_fcv, ψ2_cv, τ2, z_α, confidence_interval, bin_list
 
 using OffsetArrays
+using Statistics
 
 function missrow(σ::BitVector)
     counter = maxcount = 0
@@ -58,7 +59,7 @@ function calculate_mean_cv(v::Function, samples::Vector{Tuple{BitVector,Float64}
     # end
     # mean_miss = total_miss / num_samples
 
-    miss_values = map((σ, _) -> v(σ), samples)
+    miss_values = map(σ -> v(σ[1]), samples)
     mean_miss = mean(miss_values)
 
     return mean_miss
