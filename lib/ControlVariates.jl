@@ -5,7 +5,7 @@ export calculate_mean_cv, calculate_missrow_prob
 export β, fcv, fcvW, inverse_fcv, ψ2_cv, τ2, z_α, confidence_interval, bin_list
 
 using OffsetArrays
-using Statistics
+using Statistics: mean
 
 function missrow(σ::BitVector)
     counter = maxcount = 0
