@@ -13,7 +13,7 @@ using Base.Threads
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
-    p::Real
+    q::Real
     H::Integer
 end
 
@@ -40,8 +40,8 @@ function single_run_deviation(a::Automaton, z_0::AbstractVector{Float64}, input:
     maximum(deviation(a, z_0, reachable))
 end
 
-function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, p::Real, n::Integer; H::Integer=100)
-    sp = SamplerPWCET(p, H)
+function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer; H::Integer=100)
+    sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     Threads.@threads for i in 1:n
         σ = rand(sp)
