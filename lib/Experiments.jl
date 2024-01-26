@@ -19,7 +19,7 @@ end
 
 function Random.rand!(rng::Random.AbstractRNG, a::BitVector, sp::SamplerPWCET)
     for i = 1:sp.H
-        a[i] = Random.rand(rng) < sp.p
+        a[i] = Random.rand(rng) < sp.q
     end
     a
 end
