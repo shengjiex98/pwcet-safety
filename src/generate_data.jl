@@ -27,7 +27,7 @@ H = 100
 # Generate multiple batches
 # batchsize = 10_000
 # nbatches = 100
-# filename = "100x1m.jls"
+# filename = "100x10k.jls"
 # @time batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
 # serialize("../data/batches/$filename", batches)
 
