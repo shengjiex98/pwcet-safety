@@ -3,10 +3,10 @@
 module use $HOME/modulefiles
 module add julia/1.10.0
 
-for th in 2 4 8
+for th in 2 4 8 16
 do
-    for b in 100000 1000000
-    # for b in 10000000
+    # for b in 100000 1000000
+    for b in 10000000
     do
         for q in 0.9 0.99 0.999
         do
