@@ -128,4 +128,8 @@ function find_intervals(n::Integer, p::Real, α::Real, fullresults=false)
     results
 end
 
+function constraint_satisfiability(c::WeaklyHardConstraint, q::Real, H::Integer)
+    # return Pr(σ ⊢ c | σ ∈ {0, 1}^H and Pr(σ[i] = 1) = q)
+end
+
 end
