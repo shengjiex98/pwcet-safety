@@ -87,7 +87,7 @@ function find_intervals(n::Integer, p::Real, α::Real, fullresults=false)
     @boundscheck 0 <= α <= 1 || throw(ArgumentError("α has to be within 0 and 1"))
 
     dist = Binomial(n, p)
-
+    cdf_cache = map(i -> cdf(dist, i), 1:n)
     
     i2s = fill(-1, n-1)
     i2  = 2
@@ -95,11 +95,11 @@ function find_intervals(n::Integer, p::Real, α::Real, fullresults=false)
     # Iterate over i1
     for i1 in 1:n-1
         # Find first suitable i2
-        while cdf(dist, i1-1) + (1-cdf(dist, i2-1)) > α && i2 <= n
+        while cdf_cache[i1-1] + (1-cdf_cache[i2-1]) > α && i2 <= n
             i2 += 1
         end
         # Break if i2 goes out of range
-        if cdf(dist, i1-1) + (1-cdf(dist, i2-1)) <= α
+        if cdf_cache[i1-1] + (1-cdf_cache[i2-1]) <= α
             i2s[i1] = i2
         else
             # @info "Loop ends at" i1
