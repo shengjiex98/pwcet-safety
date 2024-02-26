@@ -78,16 +78,33 @@ function lr_test_2(θ::Real, n::Integer, ϵ::Real)
 end
 
 """
-    find_intervals(n, p, α)
+    find_intervals(n, p, α; fullresults=false, centered=false)
 
-Find optimal intervals for a given confidence value (expressed by 1-α)
+Find confidence intervals (expressed by 1-α) of the p-th quantile for n samples. If 
+fullresults is set to true, include dominated intervals (e.g., [5, 9] is dominated by [5, 7]);
+if centered is set to true, only return the interval with the p-th quantile at the center.
+true, 
 """
-function find_intervals(n::Integer, p::Real, α::Real, fullresults=false)
+function find_intervals(n::Integer, p::Real, α::Real; centered=false, fullresults=false)
     @boundscheck 0 <= p <= 1 || throw(ArgumentError("p has to be within 0 and 1"))
     @boundscheck 0 <= α <= 1 || throw(ArgumentError("α has to be within 0 and 1"))
 
     dist = Binomial(n, p)
     cdf_cache = map(i -> cdf(dist, i), 1:n)
+
+    if centered
+        c = round(n * p)
+        prob_mass = (1 - α - pdf(dist, c)) / 2
+
+        i1, i2 = c
+        while cdf_cache[i2] - cdf_cache[c] < prob_mass
+            i2 += 1
+        end
+        while cdf_cache[c] - cdf_cache[i1] < prob_mass
+            i1 -= 1
+        end
+        return [(i1, i2)]
+    end
     
     i2s = fill(-1, n-1)
     i2  = 2
