@@ -7,6 +7,7 @@ export find_intervals
 
 import Random
 using Distributions
+using Memoization
 using RealTimeScheduling
 using ControlTimingSafety
 using Base.Threads
@@ -90,40 +91,35 @@ function find_intervals(n::Integer, p::Real, α::Real; centered=false, fullresul
     @boundscheck 0 <= α <= 1 || throw(ArgumentError("α has to be within 0 and 1"))
 
     dist = Binomial(n, p)
-    cdf_cache = map(i -> cdf(dist, i), 1:n)
+    # Use Memoization.jl to cache calculated cdf results (saves time for large n values).
+    @memoize cdf_cached(i) = cdf(dist, i)
 
     if centered
         c = round(n * p)
         prob_mass = (1 - α - pdf(dist, c)) / 2
 
         i1, i2 = c
-        while cdf_cache[i2] - cdf_cache[c] < prob_mass
+        while cdf_cached(i2) - cdf_cached(c) < prob_mass
             i2 += 1
         end
-        while cdf_cache[c] - cdf_cache[i1] < prob_mass
+        while cdf_cached(c-1) - cdf_cached(i1-1) < prob_mass
             i1 -= 1
         end
         return [(i1, i2)]
     end
     
-    i2s = fill(-1, n-1)
-    i2  = 2
-
-    # Iterate over i1
-    for i1 in 1:n-1
+    # i2 values for each i1 in 1:n, initialized to -1
+    i2, i2s = 1, fill(-1, n)
+    for i1 in 1:n
         # Find first suitable i2
-        while cdf_cache[i1-1] + (1-cdf_cache[i2-1]) > α && i2 <= n
+        while cdf_cached(i1-1) + (1-cdf_cached(i2)) > α && i2 < n
             i2 += 1
         end
-        # Break if i2 goes out of range
-        if cdf_cache[i1-1] + (1-cdf_cache[i2-1]) <= α
-            i2s[i1] = i2
-        else
-            # @info "Loop ends at" i1
+        if cdf_cached(i1-1) + (1-cdf_cached(i2)) > α
             break
         end
+        i2s[i1] = i2
     end
-
     if fullresults
         return [(i1, i2s[i1]) for i1 in 1:n-1]
     end
@@ -132,7 +128,6 @@ function find_intervals(n::Integer, p::Real, α::Real; centered=false, fullresul
     i1 = 1
     i2 = i2s[1]
     results = []
-    
     while i2 != -1
         while i2s[i1+1] == i2
             i1 += 1
