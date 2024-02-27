@@ -1,12 +1,19 @@
+"""
+ARGS: MODE, b, q[, n]
+MODE ∈ {"batch", "normal"}
+b is batchsize
+q is hit chance
+n (optional) number of batches for batch mode
+"""
+
 using Serialization
+using ControlSystemsBase
+using ControlTimingSafety
 
 push!(LOAD_PATH, "../lib")
 using Experiments
 using Benchmarks
 using ControlVariates
-
-using ControlSystemsBase
-using ControlTimingSafety
 
 println("Threads count: $(Threads.nthreads())")
 
@@ -21,17 +28,34 @@ u0 = 0.
 z0 = [fill(x0, size(sys.A, 1)); u0]
 
 # Hit chance
-q = 0.99
+# q = 0.999
 # Sequence length
 H = 100
 
-## === Generate multiple batches ===
+MODE = ARGS[1]
+batchsize = parse(Int64, ARGS[2])
+q = parse(Float64, ARGS[3])
 
-# batchsize = 10_000
-# nbatches = 100
-# filename = "100x10k.jls"
-# @time batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
-# serialize("../data/batches/$filename", batches)
+if MODE == "batch"
+    path = "../data/batches"
+    nbatches = parse(Int64, ARGS[4])
+    filename = "b$(batchsize/1_000)-q$q-n$nbatches.jls"
+    @info "Parameters" batchsize q nbatches
+    t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
+    @info t
+    serialize("$path/$filename.jls", batches)
+    write("$path/$filename.txt", "$t")
+elseif MODE == "normal"
+    path = "../data/nmc"
+    filename = "b$(batchsize/1_000_000)m-q$q-th$(Threads.nthreads())"
+    @info "Parameters" batchsize q
+    t = @elapsed data = generate_samples(a, z0, q, batchsize; H=H)
+    @info t
+    serialize("$path/$filename.jls", data)
+    write("$path/$filename.txt", "$t")
+else
+    @error "First argument must be either \"batch\" or \"normal\""
+end
 
 ## === Generate a single batch for each parameter ===
 
@@ -47,18 +71,3 @@ H = 100
 #     write("$path/$filename.txt", t)
 #     serialize("$path/$filename.jls", batches)
 # end
-
-
-# === Generate a single batch from command line arguments ===
-
-b = parse(Int64, ARGS[1])
-q = parse(Float64, ARGS[2])
-
-path = "../data/batches"
-filename = "b$(b/1_000_000)m-q$q-th$(Threads.nthreads())"
-t = time()
-@info b q
-t = @elapsed batches = generate_samples(a, z0, q, b; H=H)
-@info t
-write("$path/$filename.txt", "$t")
-serialize("$path/$filename.jls", batches)
