@@ -39,7 +39,7 @@ q = parse(Float64, ARGS[3])
 if MODE == "batch"
     path = "../data/batches"
     nbatches = parse(Int64, ARGS[4])
-    filename = "b$(batchsize/1_000)-q$q-n$nbatches.jls"
+    filename = "b$(batchsize/1_000)k-q$q-n$nbatches-th$(Threads.nthreads())"
     @info "Parameters" batchsize q nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
     @info t

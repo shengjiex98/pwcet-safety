@@ -9,11 +9,15 @@
 module use $HOME/modulefiles
 module add julia/1.10.0
 
-for b in 100000, 1000000
+# for b in 100000 1000000
+for b in 10000
 do
-    for q in 0.9, 0.99, 0.999
+    for q in 0.9 0.99 0.999
     do
-        echo $b $q
-        julia --project --threads=16 generate_data.jl $b $q
+        for n in 100
+        do
+            echo $b $q $n
+            julia --project --threads=16 generate_data.jl batch $b $q $n
+        done
     done
 done
