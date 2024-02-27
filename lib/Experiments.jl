@@ -95,10 +95,10 @@ function find_intervals(n::Integer, p::Real, α::Real; centered=false, fullresul
     @memoize cdf_cached(i) = cdf(dist, i)
 
     if centered
-        c = round(n * p)
+        c = round(Int64, n * p)
         prob_mass = (1 - α - pdf(dist, c)) / 2
 
-        i1, i2 = c
+        i1 = i2 = c
         while cdf_cached(i2) - cdf_cached(c) < prob_mass
             i2 += 1
         end
