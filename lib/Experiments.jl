@@ -35,20 +35,24 @@ function single_run_deviation(a::Automaton, z_0::AbstractVector{Float64}, input:
 
     # Dimensions: time, state
     z = evol(a, z_0, input)
-    # Dimensions: time, state, min/max
-    reachable = cat(z, z, dims=3)
+    # Dimensions: time, state, corners (just 1)
+    reachable = reshape(z, size(z)..., 1)
 
     maximum(deviation(a, z_0, reachable))
 end
 
-function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer; H::Integer=100)
+function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer; H::Integer=100, sorted=true)
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     Threads.@threads for i in 1:n
         σ = rand(sp)
         samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ))
     end
-    sort!(samples, by=x -> x[2])
+    if sorted
+        sort!(samples, by=x -> x[2])
+    else
+        samples
+    end
 end
 
 """
