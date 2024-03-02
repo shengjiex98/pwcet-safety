@@ -7,6 +7,7 @@ n (optional) number of batches for batch mode
 """
 
 using Serialization
+using Printf
 using ControlSystemsBase
 using ControlTimingSafety
 
@@ -39,7 +40,7 @@ q = parse(Float64, ARGS[3])
 if MODE == "batch"
     path = "../data/batches"
     nbatches = parse(Int64, ARGS[5])
-    filename = "b$(batchsize/1_000)k-q$q-n$nbatches-th$(Threads.nthreads())"
+    filename = @sprintf "b%.1e-q%f-h%f-n%i-th%i" batchsize q period n Threads.nthreads()
     @info "Parameters" batchsize q nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
     @info t
@@ -47,7 +48,7 @@ if MODE == "batch"
     write("$path/$filename.txt", "$t")
 elseif MODE == "normal"
     path = "../data/nmc"
-    filename = "b$(batchsize/1_000_000)m-q$q-th$(Threads.nthreads())"
+    filename = @sprintf "b%.1e-q%f-h%f-th%i" batchsize q period Threads.nthreads()
     @info "Parameters" batchsize q
     t = @elapsed data = generate_samples(a, z0, q, batchsize; H=H)
     @info t
