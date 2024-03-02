@@ -40,7 +40,7 @@ q = parse(Float64, ARGS[3])
 if MODE == "batch"
     path = "../data/batches"
     nbatches = parse(Int64, ARGS[5])
-    filename = @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q period n Threads.nthreads()
+    filename = generate_filename(batchsize, q, period, n)
     @info "Parameters" batchsize q nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
     @info t
@@ -48,7 +48,7 @@ if MODE == "batch"
     write("$path/$filename.txt", "$t")
 elseif MODE == "normal"
     path = "../data/nmc"
-    filename = @sprintf "b%.1e-q%.9g-h%.9g-th%i" batchsize q period Threads.nthreads()
+    filename = generate_filename(batchsize, q, period)
     @info "Parameters" batchsize q
     t = @elapsed data = generate_samples(a, z0, q, batchsize; H=H)
     @info t
