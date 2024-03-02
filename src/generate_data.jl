@@ -19,7 +19,7 @@ using ControlVariates
 println("Threads count: $(Threads.nthreads())")
 
 # Construct automaton
-period = ARGS[4] # Period
+period = parse(Float64, ARGS[4]) # Period
 sys = benchmarks[:F1T]
 a = hold_kill(c2d(sys, period), delay_lqr(sys, period))
 
@@ -40,7 +40,7 @@ q = parse(Float64, ARGS[3])
 if MODE == "batch"
     path = "../data/batches"
     nbatches = parse(Int64, ARGS[5])
-    filename = @sprintf "b%.1e-q%f-h%f-n%i-th%i" batchsize q period n Threads.nthreads()
+    filename = @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q period n Threads.nthreads()
     @info "Parameters" batchsize q nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
     @info t
@@ -48,7 +48,7 @@ if MODE == "batch"
     write("$path/$filename.txt", "$t")
 elseif MODE == "normal"
     path = "../data/nmc"
-    filename = @sprintf "b%.1e-q%f-h%f-th%i" batchsize q period Threads.nthreads()
+    filename = @sprintf "b%.1e-q%.9g-h%.9g-th%i" batchsize q period Threads.nthreads()
     @info "Parameters" batchsize q
     t = @elapsed data = generate_samples(a, z0, q, batchsize; H=H)
     @info t
