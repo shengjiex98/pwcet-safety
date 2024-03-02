@@ -1,5 +1,5 @@
 """
-ARGS: MODE, b, q[, n]
+ARGS: MODE, b, q, h[, n]
 MODE ∈ {"batch", "normal"}
 b is batchsize
 q is hit chance
@@ -18,7 +18,7 @@ using ControlVariates
 println("Threads count: $(Threads.nthreads())")
 
 # Construct automaton
-period = 0.02
+period = ARGS[4] # Period
 sys = benchmarks[:F1T]
 a = hold_kill(c2d(sys, period), delay_lqr(sys, period))
 
@@ -38,7 +38,7 @@ q = parse(Float64, ARGS[3])
 
 if MODE == "batch"
     path = "../data/batches"
-    nbatches = parse(Int64, ARGS[4])
+    nbatches = parse(Int64, ARGS[5])
     filename = "b$(batchsize/1_000)k-q$q-n$nbatches-th$(Threads.nthreads())"
     @info "Parameters" batchsize q nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
@@ -54,7 +54,7 @@ elseif MODE == "normal"
     serialize("$path/$filename.jls", data)
     write("$path/$filename.txt", "$t")
 else
-    @error "First argument must be either \"batch\" or \"normal\""
+    @error "First argument must be either 'batch' or 'normal'"
 end
 
 ## === Generate a single batch for each parameter ===
