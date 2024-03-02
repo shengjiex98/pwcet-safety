@@ -2,7 +2,7 @@
 
 julia_version = "1.10.1"
 manifest_format = "2.0"
-project_hash = "31735e00da0dd371c03edb15589eae82849b6bb4"
+project_hash = "4e838c2ce516faf84feea91be0d3c739bad0140b"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -64,9 +64,9 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.BenchmarkTools]]
 deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
-git-tree-sha1 = "f1f03a9fa24271160ed7e73051fba3c1a759b53f"
+git-tree-sha1 = "f1dff6729bc61f4d49e140da1af55dcd1ac97b2f"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.4.0"
+version = "1.5.0"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "2dc09997850d68179b69dafb58ae806167a32b1b"
