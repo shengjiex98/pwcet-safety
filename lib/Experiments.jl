@@ -2,7 +2,7 @@
 module Experiments
 
 export SamplerPWCET
-export single_run_deviation, generate_samples, generage_filename
+export single_run_deviation, generate_samples, generate_filename
 export binomial_prob, lr_test, lr_test_2
 export find_intervals
 
@@ -57,12 +57,12 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     end
 end
 
-function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer)
-    @sprintf "b%.1e-q%f-h%f-n%i-th%i" batchsize q h n Threads.nthreads()
+function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer; th::Integer=Threads.nthreads())
+    @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q h n th
 end
 
-function generate_filename(batchsize::Integer, q::Real, h::Real)
-    @sprintf "b%.1e-q%f-h%f-n%i-th%i" batchsize q h Threads.nthreads()
+function generate_filename(batchsize::Integer, q::Real, h::Real; th::Integer=Threads.nthreads())
+    @sprintf "b%.1e-q%.9g-h%.9g-th%i" batchsize q h th
 end
 
 """
