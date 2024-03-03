@@ -12,6 +12,7 @@ using Memoization
 using RealTimeScheduling
 using ControlTimingSafety
 using Base.Threads
+using Printf
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
