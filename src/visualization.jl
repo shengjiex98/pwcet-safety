@@ -149,11 +149,6 @@ let
 	mode=mode, az=az, el=el)
 end
 
-# ╔═╡ b0c76b25-c906-4ab1-aaab-5dc613a82309
-let dist = Pareto(2, 0.01)
-	
-end
-
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
@@ -163,4 +158,3 @@ end
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
 # ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
-# ╠═b0c76b25-c906-4ab1-aaab-5dc613a82309
