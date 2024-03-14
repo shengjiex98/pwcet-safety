@@ -3,8 +3,9 @@ module Experiments
 
 export SamplerPWCET
 export single_run_deviation, generate_samples, generate_filename
+export single_run_deviation2, generate_samples2
 export binomial_prob, lr_test, lr_test_2
-export find_intervals
+export find_intervals, nominal_trajectory
 
 import Random
 using Distributions
@@ -13,6 +14,7 @@ using RealTimeScheduling
 using ControlTimingSafety
 using Base.Threads
 using Printf
+
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
@@ -49,6 +51,31 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     Threads.@threads for i in 1:n
         σ = rand(sp)
         samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ))
+    end
+    if sorted
+        sort!(samples, by=x -> x[2])
+    else
+        samples
+    end
+end
+
+function single_run_deviation2(a::Automaton, z_0::AbstractVector{Float64}, input::AbstractVector{Int64}, nominal::AbstractArray{Float64,3})
+    @boundscheck length(z_0) == a.nz || throw(DimensionMismatch("z_0 must have length a.nz"))
+
+    # Dimensions: time, state
+    z = evol(a, z_0, input)
+    # Dimensions: time, state, corners (just 1)
+    reachable = reshape(z, size(z)..., 1)
+
+    maximum(deviation(a, z_0, reachable, nominal_trajectory=nominal))
+end
+
+function generate_sample2(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer, nominal::AbstractArray{Float64,3}; H::Integer=100, sorted=true)
+    sp = SamplerPWCET(q, H)
+    samples = Vector{Tuple{BitVector,Float64}}(undef, n)
+    Threads.@threads for i in 1:n
+        σ = rand(sp)
+        samples[i] = (σ, single_run_deviation2(a, z0, 2 .- σ, nominal))
     end
     if sorted
         sort!(samples, by=x -> x[2])
@@ -156,6 +183,24 @@ end
 
 function constraint_satisfiability(c::WeaklyHardConstraint, q::Real, H::Integer)
     # return Pr(σ ⊢ c | σ ∈ {0, 1}^H and Pr(σ[i] = 1) = q)
+end
+
+function nominal_trajectory(a::Automaton, z_0::AbstractVecOrMat{Float64},
+    reachable::AbstractArray{Float64,3};
+    nominal::AbstractVector{Int64}=ones(Int64,size(reachable,1)-1))
+    @boundscheck length(nominal) == size(reachable, 1) - 1 || throw(DimensionMismatch("nominal must have length size(reachable, 1) - 1"))
+    # Dimensions: state variables, points, time
+    if z_0 isa AbstractVector{Float64}
+        nominal_trajectory = reshape(a.C * evol(a, z_0, nominal)', size(a.C, 1), 1, size(reachable, 1))
+    else
+        nominal_trajectory = Array{Float64}(undef, size(a.C, 1), 2^size(z_0,1), size(reachable, 1))
+        corners = corners_from_bounds(z_0)
+        for (i, c) in enumerate(eachcol(corners))
+            e = evol(a, c, nominal)
+            nominal_trajectory[:,i,:] = a.C * e'
+         end
+    end
+    nominal_trajectory
 end
 
 end

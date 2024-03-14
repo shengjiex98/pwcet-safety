@@ -28,6 +28,14 @@ x0 = 1.
 u0 = 0.
 z0 = [fill(x0, size(sys.A, 1)); u0]
 
+# Generate nonimal trajectory
+nominal_period = period = parse(Float64, ARGS[5]) # Discrete period for nominal trajectory
+a_nominal = hold_kill(c2d(sys, nominal_period), delay_lqr(sys, nominal_period))
+@boundscheck length(z_0) == a.nz || throw(DimensionMismatch("z_0 must have length a.nz"))
+z = evol(a_nominal, z_0, input)
+reachable = reshape(z, size(z)..., 1)
+nominal = nominal_trajectory(a_nominal, z0, reachable)
+
 # Hit chance
 # q = 0.999
 # Sequence length
@@ -39,10 +47,10 @@ q = parse(Float64, ARGS[3])
 
 if MODE == "batch"
     path = "../data/batches"
-    nbatches = parse(Int64, ARGS[5])
+    nbatches = parse(Int64, ARGS[6])
     filename = generate_filename(batchsize, q, period, n)
     @info "Parameters" batchsize q nbatches
-    t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H), 1:nbatches)
+    t = @elapsed batches = map(_ -> generate_samples2(a, z0, q, batchsize, nominal; H=H), 1:nbatches)
     @info t
     serialize("$path/$filename.jls", batches)
     write("$path/$filename.txt", "$t")
