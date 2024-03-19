@@ -135,18 +135,26 @@ let go
 	"""
 end
 
+# ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
+# dist = Normal(0, 0)
+dist = Normal(0.02, 0.005)
+# dist = Pareto(2, 0.01)
+# dist = Uniform(0, 0.06)
+
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
-	dist = Normal(0, 0)
-	# dist = Normal(0.02, 0.02)
-	# dist = Pareto(2, 0.01)
-	# dist = Uniform(0, 0.06)
 	filter_fn = (q, h) -> q < cdf(dist, h) && 
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax
 	plot_results(filter_fn, points, quantiles, cap=cap, 
 		title="$dist", draw_surface=surf,
 	mode=mode, az=az, el=el)
+end
+
+# ╔═╡ 9c608fab-8fc9-4bf9-be68-96468257e6a8
+let x = range(0, 0.06, 100)
+	
+	plot(x, pdf.(dist, x), title="CDF for $dist", xlabel="T")
 end
 
 # ╔═╡ Cell order:
@@ -157,4 +165,6 @@ end
 # ╠═96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
-# ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╟─ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
+# ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
