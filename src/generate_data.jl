@@ -30,7 +30,7 @@ batchsize = parse(Int64, ARGS[2])
 q = parse(Float64, ARGS[3])
 # Period
 period = parse(Float64, ARGS[4])
-H_steps = ceil(Int64, H / period)
+H_steps = floor(Int64, H / period)
 
 # Set initial conditions
 sys = benchmarks[:F1T]
