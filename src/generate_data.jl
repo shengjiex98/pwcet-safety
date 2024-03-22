@@ -48,7 +48,11 @@ if MODE == "batch"
     path = "../data/batches-samenom"
     nbatches = parse(Int64, ARGS[5])
     filename = generate_filename(batchsize, q, period, n)
-    @info "Parameters" batchsize q nbatches
+    if isfile("$path/$filename.jls")
+        @info "$filename.jls exists, exiting."
+        return
+    end
+    @info "Parameters" MODE batchsize q period nbatches
     t = @elapsed batches = map(_ -> generate_samples(a, z0, q, batchsize; H=H_steps, nominal_trajectory=z_nom), 1:nbatches)
     @info t
     serialize("$path/$filename.jls", batches)
@@ -56,7 +60,11 @@ if MODE == "batch"
 elseif MODE == "normal"
     path = "../data/nmc-samenom"
     filename = generate_filename(batchsize, q, period)
-    @info "Parameters" batchsize q
+    if isfile("$path/$filename.jls")
+        @info "$filename.jls exists, exiting."
+        return
+    end
+    @info "Parameters" MODE batchsize q period
     t = @elapsed data = generate_samples(a, z0, q, batchsize; H=H_steps, nominal_trajectory=z_nom)
     @info t
     serialize("$path/$filename.jls", data)
