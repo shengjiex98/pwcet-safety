@@ -31,9 +31,9 @@ end
 
 # ╔═╡ 55e5c7d9-969c-415e-8822-de80174e8710
 begin
-	path = "../data/nmc"
+	path = "../data/nmc-samenom"
 
-	b = 10_000
+	b = 100_000
 	p = 0.99
 	
 	qs = append!(collect(0.1:0.05:0.9), [0.99, 0.999])
@@ -43,6 +43,10 @@ begin
 	
 	get_quantile(b, q, h; cap=Inf) = let
 	    filename = generate_filename(b, q, h, th=16)
+		if !isfile("$path/$filename.jls")
+			@info "Parameters without valid data" b q h
+			return Inf
+		end
 	    min(deserialize("$path/$filename.jls")[round(Int64, b * p)][2], cap)
 	end
 	
@@ -63,15 +67,19 @@ function plot_results(filtered::BitVector, points::Matrix{<:Real},
 	elseif mode =="period"
 		az, el = (90, 0)
 	end
-	plot(xlabel="q", ylabel="period", zlabel="deviation",
+	plot(xlabel="quantile", ylabel="period", zlabel="deviation",
 		xlims=(0, 1), ylims=(0, hs[end]), 
 		zlims=(0, min(cap, maximum(quantiles))),
 		title=title, legend=:topleft)
     if draw_surface
         surface!(points[1,filtered], points[2,filtered], 
-			min.(cap, quantiles[filtered]))
+			# min.(cap, quantiles[filtered]))
+			quantiles[filtered])
     end
-    scatter!(points[1,filtered], points[2,filtered], min.(cap, quantiles[filtered]), label="")
+    scatter!(points[1,filtered], points[2,filtered], 
+		# min.(cap, quantiles[filtered]), 
+		quantiles[filtered],
+		label="")
     # Index of minimum deviation in filtered points.
     min_id_in_filtered = argmin(quantiles[filtered])
     # Index of minimum deviation in all points.
@@ -110,7 +118,7 @@ function plot_results(filter_fn::Function, points::Matrix{<:Real},
         cap::Real=Inf, title="cap=$cap",
 		draw_surface::Bool=true, mode::String="free",
 		az::Union{Real, AbstractRange{Real}}=15, el::Real=15)
-	filtered = filter_fn.(points[1,:], points[2,:])
+	filtered = filter_fn.(points[1,:], points[2,:], quantiles)
 	plot_results(filtered, points, quantiles, title=title,
 		cap=cap, draw_surface=draw_surface, mode=mode, az=az, el=el)
 end
@@ -135,19 +143,24 @@ let go
 	"""
 end
 
+# ╔═╡ 1b2fd8b1-a806-46c1-9504-767eee197b0e
+savefig("illustration.pdf")
+
 # ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
-# dist = Normal(0, 0)
-dist = Normal(0.02, 0.005)
+dist = Normal(0, 0)
+# dist = Normal(0.02, 0.005)
 # dist = Pareto(2, 0.01)
 # dist = Uniform(0, 0.06)
 
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
-	filter_fn = (q, h) -> q < cdf(dist, h) && 
+	filter_fn = (q, h, dev) -> 
+		q < cdf(dist, h) && 
 		qmin <= q <= qmax && 
-		hmin <= h <= hmax
+		hmin <= h <= hmax &&
+		dev <= cap
 	plot_results(filter_fn, points, quantiles, cap=cap, 
-		title="$dist", draw_surface=surf,
+		title="", draw_surface=surf,
 	mode=mode, az=az, el=el)
 end
 
@@ -165,6 +178,7 @@ end
 # ╠═96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
-# ╟─ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╠═1b2fd8b1-a806-46c1-9504-767eee197b0e
 # ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
