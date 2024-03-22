@@ -9,10 +9,11 @@ export find_intervals
 import Random
 using Distributions
 using Memoization
+using Printf
+using ControlSystemsBase
+
 using RealTimeScheduling
 using ControlTimingSafety
-using Base.Threads
-using Printf
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
@@ -32,23 +33,34 @@ function Random.rand(rng::Random.AbstractRNG, sp::SamplerPWCET)
     Random.rand!(rng, a, sp)
 end
 
-function single_run_deviation(a::Automaton, z_0::AbstractVector{Float64}, input::AbstractVector{Int64})
+function single_run_deviation(a::Automaton, z_0::AbstractVector{Float64}, input::AbstractVector{Int64};
+        nominal_trajectory=nothing)
     @boundscheck length(z_0) == a.nz || throw(DimensionMismatch("z_0 must have length a.nz"))
+    @boundscheck nominal_trajectory === nothing || 
+        size(nominal_trajectory, 1) == a.nz || throw(DimensionMismatch("First dim of nominal_trajectory must be a.nz"))
+    @boundscheck nominal_trajectory === nothing || 
+        size(nominal_trajectory, 2) == length(input) + 1 || throw(DimensionMismatch("Second dim of nominal_trajectory must be input length+1"))
 
     # Dimensions: time, state
     z = evol(a, z_0, input)
     # Dimensions: time, state, corners (just 1)
     reachable = reshape(z, size(z)..., 1)
 
-    maximum(deviation(a, z_0, reachable))
+    if nominal_trajectory !== nothing
+        nominal_trajectory = reshape(a.C * nominal_trajectory, size(a.C, 1), 1, length(input) + 1)
+        maximum(deviation(a, z_0, reachable, nominal_trajectory=nominal_trajectory))
+    else
+        maximum(deviation(a, z_0, reachable))
+    end
 end
 
-function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer; H::Integer=100, sorted=true)
+function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::Integer;
+        H::Integer=100, sorted=true, nominal_trajectory=nothing)
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     Threads.@threads for i in 1:n
         σ = rand(sp)
-        samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ))
+        samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ, nominal_trajectory=nominal_trajectory))
     end
     if sorted
         sort!(samples, by=x -> x[2])
