@@ -1,7 +1,4 @@
 .DS_Store
-*.jls
-*.jld
-*.jld2
 .ipynb_checkpoints
 .vscode
 slurm*.out

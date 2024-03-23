@@ -49,9 +49,15 @@ begin
 		end
 	    min(deserialize("$path/$filename.jls")[round(Int64, b * p)][2], cap)
 	end
-	
-	points = Base.product(qs, hs) |> collect |> vec |> stack
-	quantiles = get_quantile.(b, points[1,:], points[2,:])
+
+	readback = true
+	if !readback
+		# points = Base.product(qs, hs) |> collect |> vec |> stack
+		# quantiles = get_quantile.(b, points[1,:], points[2,:])
+		# serialize("points.jls", (points, quantiles))
+	else
+		points, quantiles = deserialize("points.jls")
+	end
 end
 
 # ╔═╡ ce5e566b-b1e3-4e79-9156-4237a170546e
@@ -139,7 +145,7 @@ let go
 	| min h value      | $(@bind hmin Slider(hs, default=hs[1], show_value=true)) |
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
-	| cap 			   | $(@bind cap  Slider(1:0.5:10, default=2, show_value=true)) |
+	| cap 			   | $(@bind cap  Slider(1:1:15, default=2, show_value=true)) |
 	"""
 end
 
@@ -147,9 +153,9 @@ end
 savefig("illustration.pdf")
 
 # ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
-dist = Normal(0, 0)
+# dist = Normal(0, 0)
 # dist = Normal(0.02, 0.005)
-# dist = Pareto(2, 0.01)
+dist = Pareto(1.5, 0.01)
 # dist = Uniform(0, 0.06)
 
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
