@@ -39,7 +39,7 @@ begin
 	qs = append!(collect(0.1:0.05:0.9), [0.99, 0.999])
 	hs = collect(0.005:0.0025:0.06)
 	# hs = append!(collect(0.005:0.0025:0.06), [0.1, 0.2, 0.5, 1.0])
-	@info size(qs), size(hs)
+	@info "Number of quantiles and periods:" size(qs,1) size(hs,1)
 	
 	get_quantile(b, q, h; cap=Inf) = let
 	    filename = generate_filename(b, q, h, th=16)
@@ -60,8 +60,47 @@ begin
 	end
 end
 
+# ╔═╡ 6eaac4e2-f3b4-4005-bd53-35232577d44d
+function set_indices_to_1(bool_list::Vector{Bool}, indices::Vector{Int})
+    new_bool_list = falses(length(bool_list))
+    new_bool_list[indices] .= true
+    return new_bool_list
+end
+
+# ╔═╡ 0699d6f6-caf7-4f74-a3f4-fe7f3e82e0fb
+function divide(filtered_data::Vector{Tuple{Bool, Float64}}, quantiles::AbstractVector{Float64})
+    # Extract bool_list from filtered_data
+    bool_list = [x[1] for x in filtered_data]
+    
+    # Group indices of filtered_data by their second element (Float64)
+    grouped_indices = Dict{Float64, Vector{Int}}()
+    for (idx, (_, value)) in enumerate(filtered_data)
+		if bool_list[idx]
+        	if haskey(grouped_indices, value)
+            	push!(grouped_indices[value], idx)
+        	else
+            	grouped_indices[value] = [idx]
+        	end
+		end
+    end
+	return grouped_indices
+end
+
+# ╔═╡ 9ce24ee4-8b94-4d2f-98a5-30302b61a9ef
+function argmin_quantiles(filtered_data::Vector{Tuple{Bool, Float64}}, quantiles::AbstractVector{Float64})
+	grouped_indices = divide(filtered_data, quantiles)
+    # Calculate quantiles for each group and find the argmin
+    argmins = Dict{Float64, Int}()
+    for (value, _) in grouped_indices
+        list = grouped_indices[value]
+        min_index = argmin(quantiles[list])
+        argmins[value] = list[min_index]
+    end
+    return argmins
+end
+
 # ╔═╡ ce5e566b-b1e3-4e79-9156-4237a170546e
-function plot_results(filtered::BitVector, points::Matrix{<:Real}, 
+function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::Matrix{<:Real}, 
 		quantiles::Vector{<:Real};
 		title::String,
         cap::Real=Inf, draw_surface::Bool=true, mode::String="free",
@@ -73,6 +112,7 @@ function plot_results(filtered::BitVector, points::Matrix{<:Real},
 	elseif mode =="period"
 		az, el = (90, 0)
 	end
+	filtered = [x[1] for x in filtered_data]
 	plot(xlabel="quantile", ylabel="period", zlabel="deviation",
 		xlims=(0, 1), ylims=(0, hs[end]), 
 		zlims=(0, min(cap, maximum(quantiles))),
@@ -86,18 +126,38 @@ function plot_results(filtered::BitVector, points::Matrix{<:Real},
 		# min.(cap, quantiles[filtered]), 
 		quantiles[filtered],
 		label="")
+	grouped_indices = divide(filtered_data, quantiles)
+	for (key,_) in grouped_indices
+		list = grouped_indices[key]
+		group_bool = set_indices_to_1(filtered, list)
+		scatter!(points[1,group_bool], points[2,group_bool], 
+		# min.(cap, quantiles[filtered]), 
+		quantiles[group_bool],
+		label="$key")
+	end
     # Index of minimum deviation in filtered points.
-    min_id_in_filtered = argmin(quantiles[filtered])
+    # min_id_in_filtered = argmin(quantiles[filtered])
     # Index of minimum deviation in all points.
-    min_id = findall(filtered)[min_id_in_filtered]
-    println("Combination with lowest deviation: " *
-        "q=$(points[1,min_id]), " *
-        "period=$(points[2,min_id]), " *
-        "dev=$(round(quantiles[min_id], sigdigits=3))")
-    scatter!([points[1,min_id]], 
-        [points[2,min_id]], 
-        [min(quantiles[min_id], cap)], 
-        label="Minimum Deviation")
+	# println(min_id_in_filtered)
+ 	# min_id = findall(filtered)[min_id_in_filtered]
+	# println(min_id)
+	min_id_in_filtered = argmin_quantiles(filtered_data, quantiles)
+	for (key, min_id) in min_id_in_filtered 
+    	println("Combination with lowest deviation: " *
+        	"q=$(points[1,min_id]), " *
+        	"period=$(points[2,min_id]), " *
+        	"dev=$(round(quantiles[min_id], sigdigits=3))")
+    	scatter!([points[1,min_id]], 
+       		[points[2,min_id]], 
+        	[min(quantiles[min_id], cap)], color=:red,
+        	label="Min_d of $key")
+	end
+	list = collect(values(min_id_in_filtered))
+	filtered_min = set_indices_to_1(filtered, list)
+	plot!(points[1,filtered_min], points[2,filtered_min], 
+		# min.(cap, quantiles[filtered]), 
+		quantiles[filtered_min],
+		label="")
 	if az isa Real
 		plot!(camera=(az, el))
 	else
@@ -161,10 +221,10 @@ dist = Pareto(1.5, 0.01)
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
 	filter_fn = (q, h, dev) -> 
-		q < cdf(dist, h) && 
+		(q < cdf(dist, h) && 
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
-		dev <= cap
+		dev <= cap, q)
 	plot_results(filter_fn, points, quantiles, cap=cap, 
 		title="", draw_surface=surf,
 	mode=mode, az=az, el=el)
@@ -173,13 +233,16 @@ end
 # ╔═╡ 9c608fab-8fc9-4bf9-be68-96468257e6a8
 let x = range(0, 0.06, 100)
 	
-	plot(x, pdf.(dist, x), title="CDF for $dist", xlabel="T")
+	plot(x, cdf.(dist, x), title="CDF for $dist", xlabel="T")
 end
 
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
 # ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
+# ╠═6eaac4e2-f3b4-4005-bd53-35232577d44d
+# ╠═0699d6f6-caf7-4f74-a3f4-fe7f3e82e0fb
+# ╠═9ce24ee4-8b94-4d2f-98a5-30302b61a9ef
 # ╠═a88efb9c-e111-42bc-86c4-93015193bd02
 # ╠═96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
