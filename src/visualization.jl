@@ -103,7 +103,7 @@ end
 function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::Matrix{<:Real}, 
 		quantiles::Vector{<:Real};
 		title::String,
-        cap::Real=Inf, draw_surface::Bool=true, mode::String="free",
+        cap::Real=Inf, draw_surface::Bool=true, draw_all_points::Bool=true, 	mode::String="free",
 		az::Union{Real, AbstractRange{Real}}=55, el::Real=15)
 	@boundscheck mode == "free" || mode == "q" || mode == "period" || 
 	throw(ArgumentError("`mode` has to be `free`, `q`, or `period`. $mode is given"))
@@ -122,25 +122,29 @@ function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::M
 			# min.(cap, quantiles[filtered]))
 			quantiles[filtered])
     end
-    scatter!(points[1,filtered], points[2,filtered], 
-		# min.(cap, quantiles[filtered]), 
-		quantiles[filtered],
-		label="")
-	grouped_indices = divide(filtered_data, quantiles)
-	for (key,_) in grouped_indices
-		list = grouped_indices[key]
-		group_bool = set_indices_to_1(filtered, list)
-		scatter!(points[1,group_bool], points[2,group_bool], 
-		# min.(cap, quantiles[filtered]), 
-		quantiles[group_bool],
-		label="$key")
+	if draw_all_points
+    	scatter!(points[1,filtered], points[2,filtered], 
+			# min.(cap, quantiles[filtered]), 
+			quantiles[filtered],
+			label="")
+		grouped_indices = divide(filtered_data, quantiles)
+		for (key,_) in grouped_indices
+			list = grouped_indices[key]
+			group_bool = set_indices_to_1(filtered, list)
+			scatter!(points[1,group_bool], points[2,group_bool], 
+			# min.(cap, quantiles[filtered]), 
+			quantiles[group_bool],
+			label="$key")
+		end
 	end
+	
     # Index of minimum deviation in filtered points.
     # min_id_in_filtered = argmin(quantiles[filtered])
     # Index of minimum deviation in all points.
 	# println(min_id_in_filtered)
  	# min_id = findall(filtered)[min_id_in_filtered]
 	# println(min_id)
+	
 	min_id_in_filtered = argmin_quantiles(filtered_data, quantiles)
 	for (key, min_id) in min_id_in_filtered 
     	println("Combination with lowest deviation: " *
@@ -150,14 +154,14 @@ function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::M
     	scatter!([points[1,min_id]], 
        		[points[2,min_id]], 
         	[min(quantiles[min_id], cap)], color=:red,
-        	label="Min_d of $key")
+        	label="")
 	end
 	list = collect(values(min_id_in_filtered))
 	filtered_min = set_indices_to_1(filtered, list)
 	plot!(points[1,filtered_min], points[2,filtered_min], 
 		# min.(cap, quantiles[filtered]), 
-		quantiles[filtered_min],
-		label="")
+		quantiles[filtered_min], color=:red,
+		label="Pareto Front")
 	if az isa Real
 		plot!(camera=(az, el))
 	else
@@ -171,22 +175,22 @@ end
 function plot_results(dist::Distribution, points::Matrix{<:Real}, 
 		quantiles::Vector{<:Real};
         cap::Real=Inf, title="$dist cap=$cap",
-		draw_surface::Bool=true, mode::String="free",
+		draw_surface::Bool=true, draw_all_points::Bool=true, mode::String="free",
 		az::Union{Real, AbstractRange{Real}}=55, el::Real=15)
 	filtered = points[1,:] .<= cdf.(dist, points[2,:])
 	plot_results(filtered, points, quantiles, title=title,
-		cap=cap, draw_surface=draw_surface, mode=mode, az=az, el=el)
+		cap=cap, draw_surface=draw_surface,draw_all_points=draw_all_points,  mode=mode, az=az, el=el)
 end
 
 # ╔═╡ 96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
 function plot_results(filter_fn::Function, points::Matrix{<:Real}, 
 		quantiles::Vector{<:Real};
         cap::Real=Inf, title="cap=$cap",
-		draw_surface::Bool=true, mode::String="free",
+		draw_surface::Bool=true, draw_all_points::Bool=true, mode::String="free",
 		az::Union{Real, AbstractRange{Real}}=15, el::Real=15)
 	filtered = filter_fn.(points[1,:], points[2,:], quantiles)
 	plot_results(filtered, points, quantiles, title=title,
-		cap=cap, draw_surface=draw_surface, mode=mode, az=az, el=el)
+		cap=cap, draw_surface=draw_surface, draw_all_points=draw_all_points, mode=mode, az=az, el=el)
 end
 
 # ╔═╡ d4549398-3ca3-44ba-b016-ca55bf4056cf
@@ -205,6 +209,7 @@ let go
 	| min h value      | $(@bind hmin Slider(hs, default=hs[1], show_value=true)) |
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
+	| all points       | $(@bind all_points CheckBox(default=true)) |
 	| cap 			   | $(@bind cap  Slider(1:1:15, default=2, show_value=true)) |
 	"""
 end
@@ -226,7 +231,7 @@ let
 		hmin <= h <= hmax &&
 		dev <= cap, q)
 	plot_results(filter_fn, points, quantiles, cap=cap, 
-		title="", draw_surface=surf,
+		title="", draw_surface=surf, draw_all_points=all_points,
 	mode=mode, az=az, el=el)
 end
 
