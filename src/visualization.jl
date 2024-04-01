@@ -22,7 +22,9 @@ begin
 	using PlutoUI
 	using Serialization
 	using Distributions
+	# using PlotlyJS
 	using Plots
+	plotlyjs()
 
 	push!(LOAD_PATH, "../lib")
 	using Experiments
@@ -60,6 +62,36 @@ begin
 	end
 end
 
+# ╔═╡ 297e0882-2eb5-4f54-9b9f-91840659b34a
+let
+	q = 0.7
+	h = 0.0225
+	filename = generate_filename(b, q, h, th=16)
+	data = deserialize("$path/$filename.jls")
+	[data[i][2] for i in (99_000, 98937, 99060)]
+end
+
+# ╔═╡ f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
+let
+	q = 0.8
+	h = 0.03
+	filename = generate_filename(b, q, h, th=16)
+	data = deserialize("$path/$filename.jls")
+	[data[i][2] for i in (99_000, 98937, 99060)]
+end
+
+# ╔═╡ 0c83a619-0405-4039-90fd-a09676eb9326
+let
+	q = 0.75
+	h = 0.0275
+	filename = generate_filename(b, q, h, th=16)
+	data = deserialize("$path/$filename.jls")
+	[data[i][2] for i in (99_000, 98937, 99060)]
+end
+
+# ╔═╡ 730899e1-edd5-4ddc-be98-b193a22bb6f8
+find_intervals(b, p, 0.05, centered=true)
+
 # ╔═╡ ce5e566b-b1e3-4e79-9156-4237a170546e
 function plot_results(filtered::BitVector, points::Matrix{<:Real}, 
 		quantiles::Vector{<:Real};
@@ -76,7 +108,7 @@ function plot_results(filtered::BitVector, points::Matrix{<:Real},
 	plot(xlabel="quantile", ylabel="period", zlabel="deviation",
 		xlims=(0, 1), ylims=(0, hs[end]), 
 		zlims=(0, min(cap, maximum(quantiles))),
-		title=title, legend=:topleft)
+		title=title, legend=:topleft, proj_type=:ortho)
     if draw_surface
         surface!(points[1,filtered], points[2,filtered], 
 			# min.(cap, quantiles[filtered]))
@@ -130,7 +162,10 @@ function plot_results(filter_fn::Function, points::Matrix{<:Real},
 end
 
 # ╔═╡ d4549398-3ca3-44ba-b016-ca55bf4056cf
-@bind go Button("Reset")
+md"""
+$(@bind go Button("Reset"))
+$(@bind sv Button("Save"))
+"""
 
 # ╔═╡ dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 let go
@@ -145,12 +180,16 @@ let go
 	| min h value      | $(@bind hmin Slider(hs, default=hs[1], show_value=true)) |
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
-	| cap 			   | $(@bind cap  Slider(1:1:15, default=2, show_value=true)) |
+	| cap 			   | $(@bind cap  Slider(1:0.5:15, default=2, show_value=true)) |
 	"""
 end
 
-# ╔═╡ 1b2fd8b1-a806-46c1-9504-767eee197b0e
-savefig("illustration.pdf")
+# ╔═╡ d0d10130-ef6e-4a7f-b3f9-4715f01b737c
+let 
+	if sv == "Save"
+		savefig("illustration.pdf")
+	end
+end
 
 # ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # dist = Normal(0, 0)
@@ -179,12 +218,16 @@ end
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
+# ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
+# ╠═f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
+# ╠═0c83a619-0405-4039-90fd-a09676eb9326
+# ╠═730899e1-edd5-4ddc-be98-b193a22bb6f8
 # ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
 # ╠═a88efb9c-e111-42bc-86c4-93015193bd02
 # ╠═96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
 # ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
-# ╠═1b2fd8b1-a806-46c1-9504-767eee197b0e
+# ╠═d0d10130-ef6e-4a7f-b3f9-4715f01b737c
 # ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
