@@ -21,10 +21,10 @@ begin
 
 	using PlutoUI
 	using Serialization
-	using Distributions
+	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf
 	# using PlotlyJS
 	using Plots
-	plotlyjs()
+	# plotlyjs()
 
 	push!(LOAD_PATH, "../lib")
 	using Experiments
@@ -37,10 +37,10 @@ begin
 
 	b = 100_000
 	p = 0.99
-	
+
 	qs = append!(collect(0.1:0.05:0.9), [0.99, 0.999])
 	hs = collect(0.005:0.0025:0.06)
-	# hs = append!(collect(0.005:0.0025:0.06), [0.1, 0.2, 0.5, 1.0])
+	# hs = append!(collect(0.005:0.0025:0.06), [0.1, 0.2, 0.5, 1.0]
 	@info "Number of quantiles and periods:" size(qs,1) size(hs,1)
 	
 	get_quantile(b, q, h; cap=Inf) = let
@@ -54,43 +54,80 @@ begin
 
 	readback = true
 	if !readback
-		# points = Base.product(qs, hs) |> collect |> vec |> stack
-		# quantiles = get_quantile.(b, points[1,:], points[2,:])
-		# serialize("points.jls", (points, quantiles))
-	else
-		points, quantiles = deserialize("points.jls")
+		let
+			points = Base.product(qs, hs) |> collect |> vec |> stack
+			quantiles = get_quantile.(b, points[1,:], points[2,:])
+			serialize("points.jls", (points, quantiles))
+		end
 	end
+	
+	points_small, quantiles_small = deserialize("points.jls")
+end
+
+# ╔═╡ d8e29adb-6cf3-4e0c-a077-72c6606c220e
+begin
+	b_large = 1_000_000
+
+	readback_large = true
+	if !readback_large
+		let
+			qs = collect(0.7:0.01:0.8)
+			hs = append!(collect(0.02:0.001:0.03), [0.0225, 0.0275])
+			@info "Number of quantiles and periods:" size(qs,1) size(hs,1)
+			
+			points = Base.product(qs, hs) |> collect |> vec |> stack
+			quantiles = get_quantile.(b_large, points[1,:], points[2,:])
+			serialize("points_large.jls", (points, quantiles))
+		end
+	end
+	points_large, quantiles_large = deserialize("points_large.jls")
+end
+
+# ╔═╡ 3f0c133d-6482-4c1d-95cf-d7802799e2f8
+begin
+	points = [points_small points_large]
+	quantiles = append!(quantiles_small, quantiles_large)
+	# points = points_small
+	# quantiles = quantiles_small
+	# points = points_large
+	# quantiles = quantiles_large
+end
+
+# ╔═╡ b6177e6a-7587-4fac-8af5-ebf946b8434d
+
+
+# ╔═╡ 730899e1-edd5-4ddc-be98-b193a22bb6f8
+begin
+	i_low, i_high = find_intervals(b_large, p, 0.05, centered=true)[1]
+	i_99 = round(Int64, b_large*p)
 end
 
 # ╔═╡ 297e0882-2eb5-4f54-9b9f-91840659b34a
 let
 	q = 0.7
 	h = 0.0225
-	filename = generate_filename(b, q, h, th=16)
+	filename = generate_filename(b_large, q, h, th=16)
 	data = deserialize("$path/$filename.jls")
-	[data[i][2] for i in (99_000, 98937, 99060)]
-end
-
-# ╔═╡ f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
-let
-	q = 0.8
-	h = 0.03
-	filename = generate_filename(b, q, h, th=16)
-	data = deserialize("$path/$filename.jls")
-	[data[i][2] for i in (99_000, 98937, 99060)]
+	[data[i][2] for i in (i_low, i_99, i_high)]
 end
 
 # ╔═╡ 0c83a619-0405-4039-90fd-a09676eb9326
 let
 	q = 0.75
 	h = 0.0275
-	filename = generate_filename(b, q, h, th=16)
+	filename = generate_filename(b_large, q, h, th=16)
 	data = deserialize("$path/$filename.jls")
-	[data[i][2] for i in (99_000, 98937, 99060)]
+	[data[i][2] for i in (i_low, i_99, i_high)]
 end
 
-# ╔═╡ 730899e1-edd5-4ddc-be98-b193a22bb6f8
-find_intervals(b, p, 0.05, centered=true)
+# ╔═╡ f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
+let
+	q = 0.8
+	h = 0.03
+	filename = generate_filename(b_large, q, h, th=16)
+	data = deserialize("$path/$filename.jls")
+	[data[i][2] for i in (i_low, i_99, i_high)]
+end
 
 # ╔═╡ 6eaac4e2-f3b4-4005-bd53-35232577d44d
 function set_indices_to_1(bool_list::Vector{Bool}, indices::Vector{Int})
@@ -146,8 +183,8 @@ function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::M
 	end
 	filtered = [x[1] for x in filtered_data]
 	plot(xlabel="quantile", ylabel="period", zlabel="deviation",
-		xlims=(0, 1), ylims=(0, hs[end]), 
-		zlims=(0, min(cap, maximum(quantiles))),
+		# xlims=(0, 1), ylims=(0, hs[end]), 
+		# zlims=(0, min(cap, maximum(quantiles))),
 		title=title, legend=:topleft, proj_type=:ortho)
     if draw_surface
         surface!(points[1,filtered], points[2,filtered], 
@@ -250,10 +287,8 @@ let go
 end
 
 # ╔═╡ d0d10130-ef6e-4a7f-b3f9-4715f01b737c
-let 
-	if sv == "Save"
-		savefig("illustration.pdf")
-	end
+if sv == "Save"
+	savefig("illustration.pdf")
 end
 
 # ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
@@ -265,7 +300,7 @@ dist = Pareto(1.5, 0.01)
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
 	filter_fn = (q, h, dev) -> 
-		(q < cdf(dist, h) && 
+		(q < cdf(dist, h) &&
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
 		dev <= cap, q)
@@ -283,10 +318,13 @@ end
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
-# ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
-# ╠═f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
-# ╠═0c83a619-0405-4039-90fd-a09676eb9326
+# ╠═d8e29adb-6cf3-4e0c-a077-72c6606c220e
+# ╠═3f0c133d-6482-4c1d-95cf-d7802799e2f8
+# ╠═b6177e6a-7587-4fac-8af5-ebf946b8434d
 # ╠═730899e1-edd5-4ddc-be98-b193a22bb6f8
+# ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
+# ╠═0c83a619-0405-4039-90fd-a09676eb9326
+# ╠═f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
 # ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
 # ╠═6eaac4e2-f3b4-4005-bd53-35232577d44d
 # ╠═0699d6f6-caf7-4f74-a3f4-fe7f3e82e0fb
