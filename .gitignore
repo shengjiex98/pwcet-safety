@@ -3,4 +3,3 @@
 .vscode
 slurm*.out
 slurm*.err
-test.*
