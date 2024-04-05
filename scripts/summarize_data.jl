@@ -4,11 +4,12 @@ using Distributions: Pareto, quantile
 push!(LOAD_PATH, "../src")
 using Experiments
 
-PATH = "../data/nmc-dist/"
-OUTPUT_FILE = "nmc-dist-proxy.jls"
+PATH = "../data/nmc-dist"
+OUTPUT_PATH = "../data-proxy"
+OUTPUT_FILE = "nmc-dist"
 BATCHSIZE = 1_000_000
 H = 100 * 0.02
-Q_VALUES = 0.01:0.01:0.02
+Q_VALUES = 0.01:0.01:0.99
 DIST = Pareto(1.5, 0.01)
 
 p = 0.99
@@ -32,5 +33,8 @@ end |> stack
 
 @info size(quantiles)
 
-serialize("./$OUTPUT_FILE", quantiles)
+serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", quantiles)
+
+full = vcat(reshape(Q_VALUES, 1, :), reshape(periods, 1, :), quantiles)'
+writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", full, ',')
 
