@@ -30,7 +30,7 @@ PATH = "../data/nmc-dist/"
 TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 if TASK_ID > length(Q_VALUES)
     println("TASK_ID exceeds available parameters. Exiting.")
-    return
+    exit()
 end
 
 @info "Threads count:" Threads.nthreads()
