@@ -6,12 +6,12 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=8g
 #SBATCH --time=0-01:00:00
-#SBATCH --mail-type=all                 # send email on job start, end and fault
+#SBATCH --mail-type=all                     # send email on job start, end and fault
 #SBATCH --mail-user=sxunique@cs.unc.edu
 
-#SBATCH --array=1-10%50                 # maximum 50 tasks at the same time
-#SBATCH --output=../out/slurm-%A.%a.out    # stdout file
-#SBATCH --error=../err/slurm-%A.%a.err     # stderr file
+#SBATCH --array=1-100%10                    # maximum 50 tasks at the same time
+#SBATCH --output=../out/slurm-%A.%a.out     # stdout file
+#SBATCH --error=../err/slurm-%A.%a.err      # stderr file
 
 echo "SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID."
 echo "SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
