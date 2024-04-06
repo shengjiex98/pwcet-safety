@@ -20,7 +20,9 @@ begin
 	Pkg.activate("..")
 
 	using PlutoUI
+	using Printf
 	using Serialization
+	using DelimitedFiles
 	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf
 	# using PlotlyJS
 	using Plots
@@ -61,7 +63,7 @@ begin
 		end
 	end
 	
-	points_small, quantiles_small = deserialize("points.jls")
+	points_small, quantiles_small = deserialize("../data-proxy/points.jls")
 end
 
 # ╔═╡ d8e29adb-6cf3-4e0c-a077-72c6606c220e
@@ -80,21 +82,18 @@ begin
 			serialize("points_large.jls", (points, quantiles))
 		end
 	end
-	points_large, quantiles_large = deserialize("points_large.jls")
+	points_large, quantiles_large = deserialize("../data-proxy/points_large.jls")
 end
 
 # ╔═╡ 3f0c133d-6482-4c1d-95cf-d7802799e2f8
 begin
 	points = [points_small points_large]
-	quantiles = append!(quantiles_small, quantiles_large)
+	quantiles = vcat(quantiles_small, quantiles_large)
 	# points = points_small
 	# quantiles = quantiles_small
 	# points = points_large
 	# quantiles = quantiles_large
 end
-
-# ╔═╡ b6177e6a-7587-4fac-8af5-ebf946b8434d
-
 
 # ╔═╡ 730899e1-edd5-4ddc-be98-b193a22bb6f8
 begin
@@ -122,144 +121,11 @@ end
 
 # ╔═╡ f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
 let
-	q = 0.8
-	h = 0.03
+	q = 0.79
+	h = 0.028
 	filename = generate_filename(b_large, q, h, th=16)
 	data = deserialize("$path/$filename.jls")
 	[data[i][2] for i in (i_low, i_99, i_high)]
-end
-
-# ╔═╡ 6eaac4e2-f3b4-4005-bd53-35232577d44d
-function set_indices_to_1(bool_list::Vector{Bool}, indices::Vector{Int})
-    new_bool_list = falses(length(bool_list))
-    new_bool_list[indices] .= true
-    return new_bool_list
-end
-
-# ╔═╡ 0699d6f6-caf7-4f74-a3f4-fe7f3e82e0fb
-function divide(filtered_data::Vector{Tuple{Bool, Float64}}, quantiles::AbstractVector{Float64})
-    # Extract bool_list from filtered_data
-    bool_list = [x[1] for x in filtered_data]
-    
-    # Group indices of filtered_data by their second element (Float64)
-    grouped_indices = Dict{Float64, Vector{Int}}()
-    for (idx, (_, value)) in enumerate(filtered_data)
-		if bool_list[idx]
-        	if haskey(grouped_indices, value)
-            	push!(grouped_indices[value], idx)
-        	else
-            	grouped_indices[value] = [idx]
-        	end
-		end
-    end
-	return grouped_indices
-end
-
-# ╔═╡ 9ce24ee4-8b94-4d2f-98a5-30302b61a9ef
-function argmin_quantiles(filtered_data::Vector{Tuple{Bool, Float64}}, quantiles::AbstractVector{Float64})
-	grouped_indices = divide(filtered_data, quantiles)
-    # Calculate quantiles for each group and find the argmin
-    argmins = Dict{Float64, Int}()
-    for (value, _) in grouped_indices
-        list = grouped_indices[value]
-        min_index = argmin(quantiles[list])
-        argmins[value] = list[min_index]
-    end
-    return argmins
-end
-
-# ╔═╡ ce5e566b-b1e3-4e79-9156-4237a170546e
-function plot_results(filtered_data::Vector{Tuple{Bool, Float64}}, 		  points::Matrix{<:Real}, 
-		quantiles::Vector{<:Real};
-		title::String,
-        cap::Real=Inf, draw_surface::Bool=true, draw_all_points::Bool=true, 	mode::String="free",
-		az::Union{Real, AbstractRange{Real}}=55, el::Real=15)
-	@boundscheck mode == "free" || mode == "q" || mode == "period" || 
-	throw(ArgumentError("`mode` has to be `free`, `q`, or `period`. $mode is given"))
-	if mode == "q"
-		az, el = (0, 0)
-	elseif mode =="period"
-		az, el = (90, 0)
-	end
-	filtered = [x[1] for x in filtered_data]
-	plot(xlabel="quantile", ylabel="period", zlabel="deviation",
-		# xlims=(0, 1), ylims=(0, hs[end]), 
-		# zlims=(0, min(cap, maximum(quantiles))),
-		title=title, legend=:topleft, proj_type=:ortho)
-    if draw_surface
-        surface!(points[1,filtered], points[2,filtered], 
-			# min.(cap, quantiles[filtered]))
-			quantiles[filtered])
-    end
-	if draw_all_points
-    	scatter!(points[1,filtered], points[2,filtered], 
-			# min.(cap, quantiles[filtered]), 
-			quantiles[filtered],
-			label="")
-		grouped_indices = divide(filtered_data, quantiles)
-		for (key,_) in grouped_indices
-			list = grouped_indices[key]
-			group_bool = set_indices_to_1(filtered, list)
-			scatter!(points[1,group_bool], points[2,group_bool], 
-			# min.(cap, quantiles[filtered]), 
-			quantiles[group_bool],
-			label="$key")
-		end
-	end
-	
-    # Index of minimum deviation in filtered points.
-    # min_id_in_filtered = argmin(quantiles[filtered])
-    # Index of minimum deviation in all points.
-	# println(min_id_in_filtered)
- 	# min_id = findall(filtered)[min_id_in_filtered]
-	# println(min_id)
-	
-	min_id_in_filtered = argmin_quantiles(filtered_data, quantiles)
-	for (key, min_id) in min_id_in_filtered 
-    	println("Combination with lowest deviation: " *
-        	"q=$(points[1,min_id]), " *
-        	"period=$(points[2,min_id]), " *
-        	"dev=$(round(quantiles[min_id], sigdigits=3))")
-    	scatter!([points[1,min_id]], 
-       		[points[2,min_id]], 
-        	[min(quantiles[min_id], cap)], color=:red,
-        	label="")
-	end
-	list = collect(values(min_id_in_filtered))
-	filtered_min = set_indices_to_1(filtered, list)
-	plot!(points[1,filtered_min], points[2,filtered_min], 
-		# min.(cap, quantiles[filtered]), 
-		quantiles[filtered_min], color=:red,
-		label="Pareto Front")
-	if az isa Real
-		plot!(camera=(az, el))
-	else
-		@gif for i in -50:10:150
-			plot!(camera=(i,el))
-		end fps=4
-	end
-end
-
-# ╔═╡ a88efb9c-e111-42bc-86c4-93015193bd02
-function plot_results(dist::Distribution, points::Matrix{<:Real}, 
-		quantiles::Vector{<:Real};
-        cap::Real=Inf, title="$dist cap=$cap",
-		draw_surface::Bool=true, draw_all_points::Bool=true, mode::String="free",
-		az::Union{Real, AbstractRange{Real}}=55, el::Real=15)
-	filtered = points[1,:] .<= cdf.(dist, points[2,:])
-	plot_results(filtered, points, quantiles, title=title,
-		cap=cap, draw_surface=draw_surface,draw_all_points=draw_all_points,  mode=mode, az=az, el=el)
-end
-
-# ╔═╡ 96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
-function plot_results(filter_fn::Function, points::Matrix{<:Real}, 
-		quantiles::Vector{<:Real};
-        cap::Real=Inf, title="cap=$cap",
-		draw_surface::Bool=true, draw_all_points::Bool=true, mode::String="free",
-		az::Union{Real, AbstractRange{Real}}=15, el::Real=15)
-	filtered = filter_fn.(points[1,:], points[2,:], quantiles)
-	plot_results(filtered, points, quantiles, title=title,
-		cap=cap, draw_surface=draw_surface, draw_all_points=draw_all_points, mode=mode, az=az, el=el)
 end
 
 # ╔═╡ d4549398-3ca3-44ba-b016-ca55bf4056cf
@@ -286,6 +152,91 @@ let go
 	"""
 end
 
+# ╔═╡ ce5e566b-b1e3-4e79-9156-4237a170546e
+function plot_results(
+		q_values::Vector{<:Real},
+		h_values::Vector{<:Real},
+		quantiles::Vector{<:Real};
+		filter_fn::Union{Function, Nothing}=nothing,
+		confidence::Union{Matrix{<:Real}, Nothing}=nothing,
+		color::Union{Symbol, Vector{Symbol}}=:lightblue,
+		title::String="",
+		draw_surface::Bool=true,
+		draw_all_points::Bool=true,
+		mode::String="free",
+		az::Union{Real, AbstractRange{<:Real}}=55,
+		el::Real=15)
+
+	# Filter data if needed; `selection` is a BitVector representing points to show
+	if !isnothing(filter_fn)
+		selection = filter_fn.(q_values, h_values, quantiles)
+	else
+		selection = trues(length(q_values))
+	end
+
+	if color isa Vector
+		color = color[selection]
+	end
+
+	# Set common properties
+	plt = plot(title=title, legend=:topleft, proj_type=:ortho)
+	
+	# Show different graph depending on `mode`
+	if mode == "q"
+		scatter!(q_values[selection], quantiles[selection], 
+			xlim=(qmin, qmax), 
+			# ylim=(0, maximum(quantiles[selection])),
+			xlabel="quantile", ylabel="deviation", color=color)
+	elseif mode == "period"
+		scatter!(h_values[selection], quantiles[selection],
+			xlim=(hmin, hmax), 
+			# ylim=(0, maximum(quantiles[selection])),
+			xlabel="period", ylabel="deviation", color=color)
+	elseif mode == "free"
+	    if draw_surface
+	        surface!(q_values[selection], h_values[selection], quantiles[selection])
+	    end
+		scatter!(q_values[selection], h_values[selection], quantiles[selection],
+			xlim=(qmin, qmax), ylim=(hmin, hmax), 
+			# zlim=(0, maximum(quantiles[selection])),
+			xlabel="quantile", ylabel="period", zlabel="deviation",
+			color=color)
+		if az isa Real
+			plot!(camera=(az, el))
+		else
+			@gif for i in -50:10:150
+				plot!(camera=(i,el))
+			end fps=4
+		end
+	else
+		throw(ArgumentError("`mode` has to be `free`, `q`, or `period`. $mode is given"))
+	end
+end
+
+# ╔═╡ d12e5d80-7099-4564-8144-778c812b106c
+let
+	full_matrix = readdlm("../data-proxy/nmc-dist.csv", ',')
+	colors = let
+		res = fill(:lightblue, size(full_matrix, 1))
+		mindev = cap
+		for (i, row) in enumerate(eachrow(full_matrix))
+			if row[4] < mindev
+				mindev = row[4]
+				res[i] = :red
+				@info @sprintf "q=%.3f, h=%.5f, dev=%.3f" row[1] row[2] row[4]
+			end
+		end
+		res
+	end
+	filter_fn = (q, h, dev) -> 
+		qmin <= q <= qmax && 
+		hmin <= h <= hmax &&
+		dev <= cap
+	plot_results(full_matrix[:,1], full_matrix[:,2], full_matrix[:,4],
+		filter_fn=filter_fn, title="Pareto(1.5, 0.01)", draw_surface=surf,
+		mode=mode, az=az, el=el, color=colors)
+end
+
 # ╔═╡ d0d10130-ef6e-4a7f-b3f9-4715f01b737c
 if sv == "Save"
 	savefig("illustration.pdf")
@@ -300,13 +251,25 @@ dist = Pareto(1.5, 0.01)
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
 	filter_fn = (q, h, dev) -> 
-		(q < cdf(dist, h) &&
+		q < cdf(dist, h) &&
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
-		dev <= cap, q)
-	plot_results(filter_fn, points, quantiles, cap=cap, 
-		title="", draw_surface=surf, draw_all_points=all_points,
-	mode=mode, az=az, el=el)
+		dev <= cap
+	colors = let
+		res = fill(:lightblue, length(quantiles_large))
+		mindev = cap
+		for (i, row) in enumerate(zip(points_large[1,:], points_large[2,:], quantiles_large))
+			if row[3] < mindev && row[1] < cdf(dist, row[2])
+				mindev = row[3]
+				res[i] = :red
+				@info @sprintf "q=%.3f, h=%.4f, dev=%.3f" row[1] row[2] row[3]
+			end
+		end
+		res
+	end
+	plot_results(points_large[1,:], points_large[2,:], quantiles_large,
+		filter_fn=filter_fn, color=colors,
+		title="$dist", draw_surface=surf, mode=mode, az=az, el=el)
 end
 
 # ╔═╡ 9c608fab-8fc9-4bf9-be68-96468257e6a8
@@ -318,22 +281,17 @@ end
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
-# ╠═d8e29adb-6cf3-4e0c-a077-72c6606c220e
+# ╟─d8e29adb-6cf3-4e0c-a077-72c6606c220e
 # ╠═3f0c133d-6482-4c1d-95cf-d7802799e2f8
-# ╠═b6177e6a-7587-4fac-8af5-ebf946b8434d
 # ╠═730899e1-edd5-4ddc-be98-b193a22bb6f8
 # ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
 # ╠═0c83a619-0405-4039-90fd-a09676eb9326
 # ╠═f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
-# ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
-# ╠═6eaac4e2-f3b4-4005-bd53-35232577d44d
-# ╠═0699d6f6-caf7-4f74-a3f4-fe7f3e82e0fb
-# ╠═9ce24ee4-8b94-4d2f-98a5-30302b61a9ef
-# ╠═a88efb9c-e111-42bc-86c4-93015193bd02
-# ╠═96ae6cbd-0a6d-4aaf-8881-1ff1471a8c9c
+# ╟─ce5e566b-b1e3-4e79-9156-4237a170546e
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
-# ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╠═d12e5d80-7099-4564-8144-778c812b106c
+# ╟─ae494460-6f76-4562-a6b4-42f0bc6df262
 # ╠═d0d10130-ef6e-4a7f-b3f9-4715f01b737c
 # ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
