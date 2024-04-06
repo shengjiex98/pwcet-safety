@@ -26,7 +26,7 @@ begin
 	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf
 	# using PlotlyJS
 	using Plots
-	# plotlyjs()
+	plotlyjs()
 
 	push!(LOAD_PATH, "../src")
 	using Experiments
@@ -291,7 +291,7 @@ end
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
 # ╠═d12e5d80-7099-4564-8144-778c812b106c
-# ╟─ae494460-6f76-4562-a6b4-42f0bc6df262
+# ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
 # ╠═d0d10130-ef6e-4a7f-b3f9-4715f01b737c
 # ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
