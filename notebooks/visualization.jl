@@ -173,16 +173,20 @@ function plot_results(
 	else
 		selection = trues(length(q_values))
 	end
-
 	if color isa Vector
 		color = color[selection]
 	end
-
 	# Set common properties
 	plt = plot(title=title, legend=:topleft, proj_type=:ortho)
 	
 	# Show different graph depending on `mode`
 	if mode == "q"
+		if !isnothing(confidence)
+			print(confidence[:,1][selection])
+			print(confidence[:,2][selection])
+            plot!(q_values[selection], quantiles[selection],
+                    ribbon=(confidence[:,1][selection], confidence[:,2][selection]), 					fillalpha=0.2, color=:gray)
+		end
 		scatter!(q_values[selection], quantiles[selection], 
 			xlim=(qmin, qmax), 
 			# ylim=(0, maximum(quantiles[selection])),
@@ -208,6 +212,7 @@ function plot_results(
 				plot!(camera=(i,el))
 			end fps=4
 		end
+
 	else
 		throw(ArgumentError("`mode` has to be `free`, `q`, or `period`. $mode is given"))
 	end
@@ -228,12 +233,20 @@ let
 		end
 		res
 	end
+	confidence = nothing
+	# confidence = zeros(size(full_matrix, 1), 2) 
+	# for (idx, elem) in enumerate(full_matrix[:, 1])
+ #   		i_low, i_high = find_intervals(b_large, elem, 0.05, centered=true)[1]
+	# 	filename = generate_filename(b_large, elem, full_matrix[:, 2][idx], th=16)
+	# 	data = deserialize("$path/$filename.jls")
+ #    	confidence[idx, :] = [data[i_low], data[i_high]]
+	# end
 	filter_fn = (q, h, dev) -> 
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
 		dev <= cap
 	plot_results(full_matrix[:,1], full_matrix[:,2], full_matrix[:,4],
-		filter_fn=filter_fn, title="Pareto(1.5, 0.01)", draw_surface=surf,
+		filter_fn=filter_fn, confidence = confidence, title="Pareto(1.5, 0.01)", draw_surface=surf,
 		mode=mode, az=az, el=el, color=colors)
 end
 
@@ -287,7 +300,7 @@ end
 # ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
 # ╠═0c83a619-0405-4039-90fd-a09676eb9326
 # ╠═f8cbd064-2eff-4ce3-8a2b-a942d8ccb47d
-# ╟─ce5e566b-b1e3-4e79-9156-4237a170546e
+# ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
 # ╠═d12e5d80-7099-4564-8144-778c812b106c
