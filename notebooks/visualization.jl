@@ -23,7 +23,7 @@ begin
 	using Printf
 	using Serialization
 	using DelimitedFiles
-	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf
+	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf, quantile
 	# using PlotlyJS
 	using Plots
 	plotlyjs()
@@ -170,39 +170,46 @@ function plot_results(
 	# Filter data if needed; `selection` is a BitVector representing points to show
 	if !isnothing(filter_fn)
 		selection = filter_fn.(q_values, h_values, quantiles)
-	else
-		selection = trues(length(q_values))
-	end
-	if color isa Vector
-		color = color[selection]
+		q_values = q_values[selection]
+		h_values = h_values[selection]
+		quantiles = quantiles[selection]
+		if color isa Vector
+			color = color[selection]
+		end
+		if confidence isa Matrix
+			confidence = confidence[selection,:]
+		end
 	end
 	# Set common properties
 	plt = plot(title=title, legend=:topleft, proj_type=:ortho)
 	
 	# Show different graph depending on `mode`
 	if mode == "q"
-		if !isnothing(confidence)
-			print(confidence[:,1][selection])
-			print(confidence[:,2][selection])
-            plot!(q_values[selection], quantiles[selection],
-                    ribbon=(confidence[:,1][selection], confidence[:,2][selection]), 					fillalpha=0.2, color=:gray)
-		end
-		scatter!(q_values[selection], quantiles[selection], 
+		scatter!(q_values, quantiles,
 			xlim=(qmin, qmax), 
-			# ylim=(0, maximum(quantiles[selection])),
+			# ylim=(0, maximum(quantiles)),
 			xlabel="quantile", ylabel="deviation", color=color)
+		if !isnothing(confidence)
+			plot!(q_values, quantiles,
+				ribbon=(confidence[:,1], confidence[:,2]))
+		end
 	elseif mode == "period"
-		scatter!(h_values[selection], quantiles[selection],
+		scatter!(h_values, quantiles,
 			xlim=(hmin, hmax), 
-			# ylim=(0, maximum(quantiles[selection])),
+			# ylim=(0, maximum(quantiles)),
 			xlabel="period", ylabel="deviation", color=color)
+		if !isnothing(confidence)
+			plot!(h_values, quantiles,
+				ribbon=(confidence[:,1], confidence[:,2]))
+		end
 	elseif mode == "free"
 	    if draw_surface
-	        surface!(q_values[selection], h_values[selection], quantiles[selection])
+	        surface!(q_values, h_values, quantiles)
 	    end
-		scatter!(q_values[selection], h_values[selection], quantiles[selection],
+		scatter!(q_values, h_values, quantiles,
+			markersize=2.5,
 			xlim=(qmin, qmax), ylim=(hmin, hmax), 
-			# zlim=(0, maximum(quantiles[selection])),
+			# zlim=(0, maximum(quantiles)),
 			xlabel="quantile", ylabel="period", zlabel="deviation",
 			color=color)
 		if az isa Real
@@ -246,7 +253,8 @@ let
 		hmin <= h <= hmax &&
 		dev <= cap
 	plot_results(full_matrix[:,1], full_matrix[:,2], full_matrix[:,4],
-		filter_fn=filter_fn, confidence = confidence, title="Pareto(1.5, 0.01)", draw_surface=surf,
+		confidence=[full_matrix[:,4]-full_matrix[:,3] full_matrix[:,5]-full_matrix[:,4]],
+		filter_fn=filter_fn, title="Pareto(1.5, 0.01)", draw_surface=surf,
 		mode=mode, az=az, el=el, color=colors)
 end
 
@@ -257,21 +265,22 @@ end
 
 # ╔═╡ aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # dist = Normal(0, 0)
-# dist = Normal(0.02, 0.005)
+# dist = Normal(0.03, 0.005)
 dist = Pareto(1.5, 0.01)
 # dist = Uniform(0, 0.06)
 
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
+	pts, qts = points, quantiles
 	filter_fn = (q, h, dev) -> 
 		q < cdf(dist, h) &&
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
 		dev <= cap
 	colors = let
-		res = fill(:lightblue, length(quantiles_large))
+		res = fill(:lightblue, length(qts))
 		mindev = cap
-		for (i, row) in enumerate(zip(points_large[1,:], points_large[2,:], quantiles_large))
+		for (i, row) in enumerate(zip(pts[1,:], pts[2,:], qts))
 			if row[3] < mindev && row[1] < cdf(dist, row[2])
 				mindev = row[3]
 				res[i] = :red
@@ -280,7 +289,7 @@ let
 		end
 		res
 	end
-	plot_results(points_large[1,:], points_large[2,:], quantiles_large,
+	plot_results(pts[1,:], pts[2,:], qts,
 		filter_fn=filter_fn, color=colors,
 		title="$dist", draw_surface=surf, mode=mode, az=az, el=el)
 end
@@ -288,7 +297,12 @@ end
 # ╔═╡ 9c608fab-8fc9-4bf9-be68-96468257e6a8
 let x = range(0, 0.06, 100)
 	
-	plot(x, cdf.(dist, x), title="CDF for $dist", xlabel="T")
+	plot(x, pdf.(dist, x), title="CDF for $dist", xlabel="T", ylabel="Q")
+end
+
+# ╔═╡ ba0db11e-4098-4ead-854f-022c123e4d62
+let q = 0:0.01:0.99
+	plot(quantile.(dist, q), q, xlabel="T", ylabel="Q")
 end
 
 # ╔═╡ Cell order:
@@ -308,3 +322,4 @@ end
 # ╠═d0d10130-ef6e-4a7f-b3f9-4715f01b737c
 # ╠═aca1dd0e-89b9-4a66-ae0b-2af07cea3636
 # ╠═9c608fab-8fc9-4bf9-be68-96468257e6a8
+# ╠═ba0db11e-4098-4ead-854f-022c123e4d62
