@@ -9,7 +9,7 @@
 #SBATCH --mail-type=all                         # send email on job start, end and fault
 #SBATCH --mail-user=sxunique@cs.unc.edu
 
-#SBATCH --array=1-100%10                        # maximum 50 tasks at the same time
+#SBATCH --array=1-100%20                        # maximum 50 tasks at the same time
 #SBATCH --output=../out/%A/slurm-%A.%a.out      # stdout file
 #SBATCH --error=../err/%A/slurm-%A.%a.err       # stderr file
 

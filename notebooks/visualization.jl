@@ -235,19 +235,10 @@ let
 			if row[4] < mindev
 				mindev = row[4]
 				res[i] = :red
-				@info @sprintf "q=%.3f, h=%.5f, dev=%.3f" row[1] row[2] row[4]
 			end
 		end
 		res
 	end
-	confidence = nothing
-	# confidence = zeros(size(full_matrix, 1), 2) 
-	# for (idx, elem) in enumerate(full_matrix[:, 1])
- #   		i_low, i_high = find_intervals(b_large, elem, 0.05, centered=true)[1]
-	# 	filename = generate_filename(b_large, elem, full_matrix[:, 2][idx], th=16)
-	# 	data = deserialize("$path/$filename.jls")
- #    	confidence[idx, :] = [data[i_low], data[i_high]]
-	# end
 	filter_fn = (q, h, dev) -> 
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
