@@ -93,7 +93,7 @@ benchmarks = Dict([
     :F1T => sys_f1t,
     :DCM => sys_dcm,
     :CSS => sys_css,
-    # :EWB => sys_ewb,
+    :EWB => sys_ewb,
     :CC1 => sys_cc1,
     :CC2 => sys_cc2
 ])

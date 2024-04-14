@@ -89,16 +89,12 @@ end
 begin
 	points = [points_small points_large]
 	quantiles = vcat(quantiles_small, quantiles_large)
-	# points = points_small
-	# quantiles = quantiles_small
-	# points = points_large
-	# quantiles = quantiles_large
 end
 
 # ╔═╡ 730899e1-edd5-4ddc-be98-b193a22bb6f8
 begin
-	i_low, i_high = find_intervals(b_large, p, 0.05, centered=true)[1]
 	i_99 = round(Int64, b_large*p)
+	i_low, i_high = find_intervals(b_large, p, 0.05, centered=true)[1]
 end
 
 # ╔═╡ 297e0882-2eb5-4f54-9b9f-91840659b34a
@@ -182,13 +178,19 @@ function plot_results(
 	end
 	# Set common properties
 	plt = plot(title=title, legend=:topleft, proj_type=:ortho)
+
+	hovertext=map(q_values, h_values, quantiles) do q, h, dev
+		@sprintf "q=%.3f h=%.3f dev=%.3f" q h dev
+	end
 	
 	# Show different graph depending on `mode`
 	if mode == "q"
 		scatter!(q_values, quantiles,
 			xlim=(qmin, qmax), 
 			# ylim=(0, maximum(quantiles)),
-			xlabel="quantile", ylabel="deviation", color=color)
+			xlabel="quantile", ylabel="deviation", color=color,
+			hover=hovertext
+		)
 		if !isnothing(confidence)
 			plot!(q_values, quantiles,
 				ribbon=(confidence[:,1], confidence[:,2]))
@@ -225,6 +227,13 @@ function plot_results(
 	end
 end
 
+# ╔═╡ 87de4ba4-7f8e-4d8f-9bda-900df72339f9
+let
+	q = 0.70
+	prob_con_miss(n, q) = (1-q)^n*q
+	sum(n -> prob_con_miss(n, q), 0:3) - 0.99
+end
+
 # ╔═╡ d12e5d80-7099-4564-8144-778c812b106c
 let
 	full_matrix = readdlm("../data-proxy/nmc-dist.csv", ',')
@@ -259,6 +268,36 @@ end
 # dist = Normal(0.03, 0.005)
 dist = Pareto(1.5, 0.01)
 # dist = Uniform(0, 0.06)
+
+# ╔═╡ 52349a66-88a5-4d88-8523-572e3cb6572b
+let
+	path="../data/nmc-dist/Pareto{Float64}(α=1.5, θ=0.01)"
+	q = 0.70
+	h = quantile(dist, q)
+	filename = generate_filename(b_large, q, h, th=16)
+	data = deserialize("$path/$filename.jls")
+	[data[i] for i in (i_low, i_99, i_high)]
+	function count_con_zeros(bv)
+		# Note: learn about why `let` makes this assignment
+		# using outside scope by default unless prefixed with `local`
+		local cnt = 0
+		for b in bv
+			if b
+				return cnt
+			end
+			cnt += 1
+		end
+		return cnt
+	end
+	cnt = 0
+	for i in i_99:b_large
+		if count_con_zeros(data[i][1]) < 4
+			cnt += 1
+			# @info "Found" i data[i]
+		end
+	end
+	println(cnt/b_large)
+end
 
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
@@ -299,7 +338,7 @@ end
 # ╔═╡ Cell order:
 # ╠═b216a1aa-dc98-11ee-0312-21d71fee5020
 # ╠═55e5c7d9-969c-415e-8822-de80174e8710
-# ╟─d8e29adb-6cf3-4e0c-a077-72c6606c220e
+# ╠═d8e29adb-6cf3-4e0c-a077-72c6606c220e
 # ╠═3f0c133d-6482-4c1d-95cf-d7802799e2f8
 # ╠═730899e1-edd5-4ddc-be98-b193a22bb6f8
 # ╠═297e0882-2eb5-4f54-9b9f-91840659b34a
@@ -308,6 +347,8 @@ end
 # ╠═ce5e566b-b1e3-4e79-9156-4237a170546e
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
+# ╠═52349a66-88a5-4d88-8523-572e3cb6572b
+# ╠═87de4ba4-7f8e-4d8f-9bda-900df72339f9
 # ╠═d12e5d80-7099-4564-8144-778c812b106c
 # ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
 # ╠═d0d10130-ef6e-4a7f-b3f9-4715f01b737c
