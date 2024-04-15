@@ -39,4 +39,4 @@ end |> stack
 serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", quantiles)
 
 full = vcat(reshape(Q_VALUES, 1, :), reshape(quantile.(DIST, Q_VALUES), 1, :), quantiles)
-writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", full, ',')
+writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", full', ',')
