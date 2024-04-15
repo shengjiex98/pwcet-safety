@@ -87,6 +87,8 @@ sys_cc2 = let
     ss(A, B, C, D)
 end
 
+sys_mpc = ss(tf([3, 1],[1, 0.6, 1]))
+
 # TODOs: figure out why EWB doesn't work, for ControlTimingSafety package.
 benchmarks = Dict([
     :RCN => sys_rcn,
@@ -95,7 +97,8 @@ benchmarks = Dict([
     :CSS => sys_css,
     :EWB => sys_ewb,
     :CC1 => sys_cc1,
-    :CC2 => sys_cc2
+    :CC2 => sys_cc2,
+    :MPC => sys_mpc
 ])
 
 function delay_lqr(sys::AbstractStateSpace{<:Continuous}, h::Float64; Q=I, R=I)
