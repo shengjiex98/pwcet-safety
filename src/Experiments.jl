@@ -69,6 +69,12 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     end
 end
 
+function generate_samples(sysd::AbstractStateSpace{<:Discrete}, x0::AbstractVector{<:Real}, ref::AbstractVector{<:Real},
+        q::Real, n::Integer; H::Integer=100, sorted=true)
+    
+    samples = Vector{Tuple{BitVector,Float64}}(undef, n)
+end
+
 function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer; th::Integer=Threads.nthreads())
     @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q h n th
 end
