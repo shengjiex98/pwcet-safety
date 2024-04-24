@@ -17,14 +17,15 @@ TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 # BATCHSIZE = 100
 BATCHSIZE = 1_000_000
 
-DIST = Pareto(1.5, 0.03)
+DIST = Pareto(1.5, 0.001)
 # DIST = Normal(0.03, 0.005)
 
 # Time horizon
 H = 100 * 0.02
 # Values of quantiles
 Q_VALUES = 0.01:0.01:0.99
-PATH = "../data/nmc-dist/$JOB_ID-$DIST/"
+SYS = :EWB
+PATH = "../data/nmc-dist/$(String(SYS))/$DIST/"
 # <<< Experiment parameters <<<
 
 mkpath(PATH)
@@ -39,7 +40,7 @@ period = quantile(DIST, q)
 H_steps = floor(Int64, H / period)
 
 # Set initial conditions
-sys = benchmarks[:F1T]
+sys = benchmarks[SYS]
 K = lqr(sys, I, I)
 x0 = fill(1., sys.nx)
 u0 = 0.
@@ -63,4 +64,4 @@ end
 t = @elapsed data = generate_samples(a, z0, q, BATCHSIZE; H=H_steps, nominal_trajectory=z_nom)
 @info t
 serialize("$PATH/$filename.jls", data)
-@info "Saved at $PATH/$filename.jls"
+@info "Saved at $PATH$filename.jls"
