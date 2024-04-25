@@ -2,7 +2,7 @@
 module Experiments
 
 export SamplerPWCET
-export single_run_deviation, generate_samples, generate_filename
+export single_run_deviation, generate_samples, generate_filename, generate_samples_mpc
 export binomial_prob, lr_test, lr_test_2
 export find_intervals
 
@@ -14,6 +14,8 @@ using ControlSystemsBase
 
 using RealTimeScheduling
 using ControlTimingSafety
+include("../MATLABControlTest.jl/src/MATLABControlTest.jl")
+using MATLABControlTest
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
 struct SamplerPWCET <: SamplerWeaklyHard
@@ -61,6 +63,22 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     Threads.@threads for i in 1:n
         σ = rand(sp)
         samples[i] = (σ, single_run_deviation(a, z0, 2 .- σ, nominal_trajectory=nominal_trajectory))
+    end
+    if sorted
+        sort!(samples, by=x -> x[2])
+    else
+        samples
+    end
+end
+
+function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete}, z0::AbstractVector{<:Real}, refs::AbstractVector{<:Real}, q::Real, n::Integer;
+    H::Integer=100, sorted=true)
+    sp = SamplerPWCET(q, H)
+    samples = Vector{Tuple{BitVector,Float64}}(undef, n)
+    Threads.@threads for i in 1:n
+        σ = rand(sp)
+        d = run_simulation(sysd, z0, refs)
+        samples[i] = (σ, d)
     end
     if sorted
         sort!(samples, by=x -> x[2])
