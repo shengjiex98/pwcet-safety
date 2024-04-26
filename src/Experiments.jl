@@ -14,7 +14,6 @@ using ControlSystemsBase
 
 using RealTimeScheduling
 using ControlTimingSafety
-include("../MATLABControlTest.jl/src/MATLABControlTest.jl")
 using MATLABControlTest
 
 # struct SamplerPWCET <: Random.Sampler{BitVector}
