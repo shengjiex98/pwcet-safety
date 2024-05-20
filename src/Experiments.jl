@@ -77,7 +77,7 @@ function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Disc
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     Threads.@threads for i in 1:n
         σ = rand(sp)
-        d = maximum(abs.(run_simulation(sysd, x0, refs) - refs))
+        d = maximum(abs.(run_simulation(sysd, x0, refs; input = σ) - refs))
         samples[i] = (σ, d)
     end
     if sorted
