@@ -24,7 +24,7 @@ module add julia/1.10.0
 echo "Start running Julia: " $(date)
 SECONDS=0
 
-(set -x; julia --project --threads=16 generate_data_ewb.jl)
+(set -x; julia --project --threads=16 generate_data_mpc.jl)
 
 echo "End running Julia: " $(date)
 echo "Elapsed time: $SECONDS"

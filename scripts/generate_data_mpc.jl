@@ -67,8 +67,8 @@ end
 
 q = Q_VALUES[TASK_ID]
 period = get_period(q)
-H_steps = floor(Int64, H / period)
 ref_values = map(get_ref, 0:period:H)
+H_steps = length(ref_values)
 
 sysd = c2d(SYS, period)
 x0 = zeros(sysd.nx)
