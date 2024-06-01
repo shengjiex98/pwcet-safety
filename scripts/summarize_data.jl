@@ -2,19 +2,20 @@ using Serialization
 using Distributions: Pareto, quantile
 using DelimitedFiles
 
-push!(LOAD_PATH, "../src")
+push!(LOAD_PATH, "./src")
+print(Base.load_path())
 using Experiments
 
-const SYS = "EWB"
-const DIST = Pareto(1.5, 0.001)
-const PATH = "../data/nmc-dist/$SYS/$DIST"
-const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
+# const SYS = "EWB"
+# const DIST = Pareto(1.5, 0.001)
+# const PATH = "../data/nmc-dist/$SYS/$DIST"
+# const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-# const JOB_ID = 37312909
-# const PATH = "../data/mpc/$JOB_ID"
-# const OUTPUT_FILE = "mpc-$JOB_ID"
+const JOB_ID = 39927918
+const PATH = "./$JOB_ID"
+const OUTPUT_FILE = "mpc-$JOB_ID"
 
-const OUTPUT_PATH = "../data-proxy"
+const OUTPUT_PATH = "./data-proxy"
 
 const P = 0.99
 
@@ -41,6 +42,10 @@ proxy = map(FILES) do filename
 end |> stack |> transpose
 
 @info size(proxy)
+@info proxy
 
 serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", proxy)
 writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", proxy, ',')
+
+println(pwd())
+
