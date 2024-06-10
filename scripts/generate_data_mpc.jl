@@ -59,6 +59,12 @@ function get_ref(t::Real)
 	DATA[t_i, :r]
 end
 
+function get_y(t::Real)
+	t_i = floor(Int64, t / 0.1) + 1
+	@boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
+	DATA[t_i, :y]
+end
+
 function get_period(q::Real)
     e_i = ceil(Int64, q * length(E_VALUES))
     @boundscheck 1 ≤ e_i ≤ length(E_VALUES) || throw(ArgumentError("t=$t out of bound"))
@@ -67,7 +73,7 @@ end
 
 q = Q_VALUES[TASK_ID]
 period = get_period(q)
-ref_values = map(get_ref, 0:period:H)
+ref_values = map(get_y, 0:period:H)
 H_steps = length(ref_values)
 
 sysd = c2d(SYS, period)
