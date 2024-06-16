@@ -1,6 +1,7 @@
 @info "Importing packages"
 flush(stderr)
 
+using JSON
 using Serialization
 using Printf
 using CSV
@@ -30,11 +31,24 @@ const BATCHSIZE = 100_000
 # Continuous system definition
 const SYS = ss(tf([3, 1],[1, 0.6, 1]))
 
+# Number of json file
+const file_num = 1:30
+
 # Reference and cycle reading
-const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
+# const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
 
 # Normalizing factor: 100_000 cycles per 0.2 second
-const E_VALUES = sort(DATA[:, :t]) / 100_000 * 0.2
+# const E_VALUES = sort(DATA[:, :t]) / 100_000 * 0.2
+
+DATA = [Dict() for _ in file_num]
+E_VALUES =[Float64[] for _ in file_num]
+for i in file_num
+    file_path = "../O2/output-O2-$i.json"
+    DATA[i] = open(file_path) do file
+        JSON.parse(file)
+    end
+    E_VALUES[i] = sort(DATA[i]["t"]) / 100_000 * 0.2
+end
 
 # Time horizon
 const H = 1000 * 0.1
@@ -46,50 +60,56 @@ const Q_VALUES = 0.01:0.01:0.99
 const PATH = "../data/mpc/$JOB_ID/"
 # <<< Experiment parameters <<<
 
-mkpath(PATH)
+for i in file_num
+    dir_path = joinpath(PATH, string(i))
+    mkpath(dir_path)
+end
 
 if TASK_ID > length(Q_VALUES)
     println("TASK_ID exceeds available parameters. Exiting.")
     exit()
 end
 
-function get_ref(t::Real)
-	t_i = floor(Int64, t / 0.1) + 1
-	@boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
-	DATA[t_i, :r]
+function get_ref(t::Real, i::Integer)
+    t_i = floor(Int64, t / 0.1) + 1
+    @boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
+    DATA[i]["r"][t_i]
 end
 
-function get_y(t::Real)
-	t_i = floor(Int64, t / 0.1) + 1
-	@boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
-	DATA[t_i, :y]
+function get_period(q::Real, i::Integer)
+    e_i = ceil(Int64, q * length(E_VALUES[i]))
+    @boundscheck 1 ≤ e_i ≤ length(E_VALUES[i]) || throw(ArgumentError("t=$t out of 		bound"))
+    E_VALUES[i][e_i]
 end
 
-function get_period(q::Real)
-    e_i = ceil(Int64, q * length(E_VALUES))
-    @boundscheck 1 ≤ e_i ≤ length(E_VALUES) || throw(ArgumentError("t=$t out of bound"))
-    E_VALUES[e_i]
+function get_y(t::Real, i::Integer)
+    t_i = floor(Int64, t / 0.1) + 1
+    @boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
+    DATA[i]["y"][t_i]
 end
 
-q = Q_VALUES[TASK_ID]
-period = get_period(q)
-ref_values = map(get_y, 0:period:H)
-H_steps = length(ref_values)
+for i in file_num
+    q = Q_VALUES[TASK_ID]
+    period = get_period(q, i)
+    ref_values = map(t -> get_ref(t, i), 0:period:H)
+    ref_values_y = map(t -> get_y(t, i), 0:period:H)
+    H_steps = length(ref_values)
 
-sysd = c2d(SYS, period)
-x0 = zeros(sysd.nx)
+    sysd = c2d(SYS, period)
+    x0 = zeros(sysd.nx)
 
-@info "Threads count:" Threads.nthreads()
-@info "System dynamics:" SYS sysd
-@info "Parameters:" BATCHSIZE H q period
-flush(stderr)
+    @info "Threads count:" Threads.nthreads()
+    @info "System dynamics:" SYS sysd
+    @info "Parameters:" BATCHSIZE H q period
+    flush(stderr)
 
-filename = generate_filename(BATCHSIZE, q, period)
-if isfile("$PATH/$filename.jls")
-    @info "$filename.jls exists, exiting."
-    exit()
+    filename = generate_filename(BATCHSIZE, q, period)
+    if isfile("$PATH/$i/$filename.jls")
+        @info "$filename.jls exists, exiting."
+        exit()
+    end
+    t = @elapsed data = generate_samples_mpc_with_multi_ref(sysd, x0, ref_values, ref_values_y, q, BATCHSIZE, H=H_steps)
+    @info t
+    serialize("$PATH/$i/$filename.jls", data)
+    @info "Saved at $PATH/$i/$filename.jls"
 end
-t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps)
-@info t
-serialize("$PATH/$filename.jls", data)
-@info "Saved at $PATH/$filename.jls"
