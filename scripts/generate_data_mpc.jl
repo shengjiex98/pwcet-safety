@@ -92,7 +92,7 @@ for i in FILE_NUM
     q = Q_VALUES[TASK_ID]
     period = get_period(q, i)
     ref_values = map(t -> get_ref(t, i), 0:period:H)
-    ref_values_y = map(t -> get_y(t, i), 0:period:H)
+    y_values = map(t -> get_y(t, i), 0:period:H)
     H_steps = length(ref_values)
 
     sysd = c2d(SYS, period)
@@ -108,7 +108,7 @@ for i in FILE_NUM
         @info "$filename.jls exists, exiting."
         exit()
     end
-    t = @elapsed data = generate_samples_mpc_with_multi_ref(sysd, x0, ref_values, ref_values_y, q, BATCHSIZE, H=H_steps)
+    t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=y_values)
     @info t
     serialize("$PATH/$i/$filename.jls", data)
     @info "Saved at $PATH/$i/$filename.jls"

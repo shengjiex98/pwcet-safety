@@ -71,12 +71,12 @@ end
 
 function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
         x0::AbstractVector{<:Real}, refs::AbstractVector{<:Real},
-        q::Real, n::Integer; H::Integer=100, sorted=true)
+        q::Real, n::Integer; H::Integer=100, sorted=true, compare=refs)
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     for i in 1:n
         σ = rand(sp)
-        d = maximum(abs.(run_simulation(sysd, x0, refs; input = σ) - refs))
+        d = maximum(abs.(run_simulation(sysd, x0, refs; input = σ) - compare))
         samples[i] = (σ, d)
     end
     if sorted
@@ -85,25 +85,6 @@ function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Disc
         samples
     end
 end
-
-function generate_samples_mpc_with_multi_ref(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
-        x0::AbstractVector{<:Real}, refs1::AbstractVector{<:Real}, refs2::AbstractVector{<:Real},
-        q::Real, n::Integer; H::Integer=100, sorted=true)
-    sp = SamplerPWCET(q, H)
-    samples = Vector{Tuple{BitVector,Float64,Float64}}(undef, n)
-    for i in 1:n
-        σ = rand(sp)
-        d1 = maximum(abs.(run_simulation(sysd, x0, refs1; input = σ) - refs1))
-        d2 = maximum(abs.(run_simulation(sysd, x0, refs2; input = σ) - refs2))
-        samples[i] = (σ, d1, d2)
-    end
-    if sorted
-        sort!(samples, by=x -> x[2])
-    else
-        samples
-    end
-end
-
 
 function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer; th::Integer=Threads.nthreads())
     @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q h n th

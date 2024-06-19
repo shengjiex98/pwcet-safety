@@ -41,7 +41,7 @@ for i in file_num
     proxy = map(FILES) do filename
         b, q, h = parsefile(filename)
         data = deserialize("$PATH/$filename")
-        vcat([q, h], [data[i][2] for i in [I_LOW, I99, I_HIGH]],  [data[i][3] for i in [I_LOW, I99, I_HIGH]])
+        vcat([q, h], [data[i][2] for i in [I_LOW, I99, I_HIGH]])
     end |> stack |> transpose
 
     @info size(proxy)
