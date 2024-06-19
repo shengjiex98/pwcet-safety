@@ -86,29 +86,12 @@ function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Disc
     end
 end
 
-function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
-        x0::AbstractVector{<:Real}, refs::AbstractVector{<:Real},
-        q::Real, n::Integer; H::Integer=100, sorted=true)
-    sp = SamplerPWCET(q, H)
-    samples = Vector{Tuple{BitVector,Float64}}(undef, n)
-    Threads.@threads for i in 1:n
-        σ = rand(sp)
-        d = maximum(abs.(run_simulation(sysd, x0, refs; input = σ) - refs))
-        samples[i] = (σ, d)
-    end
-    if sorted
-        sort!(samples, by=x -> x[2])
-    else
-        samples
-    end
-end
-
 function generate_samples_mpc_with_multi_ref(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
         x0::AbstractVector{<:Real}, refs1::AbstractVector{<:Real}, refs2::AbstractVector{<:Real},
         q::Real, n::Integer; H::Integer=100, sorted=true)
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64,Float64}}(undef, n)
-    Threads.@threads for i in 1:n
+    for i in 1:n
         σ = rand(sp)
         d1 = maximum(abs.(run_simulation(sysd, x0, refs1; input = σ) - refs1))
         d2 = maximum(abs.(run_simulation(sysd, x0, refs2; input = σ) - refs2))
