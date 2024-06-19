@@ -69,9 +69,17 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     end
 end
 
-function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
-        x0::AbstractVector{<:Real}, refs::AbstractVector{<:Real},
-        q::Real, n::Integer; H::Integer=100, sorted=true, compare=refs)
+function generate_samples_mpc(
+        sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
+        x0::AbstractVector{<:Real}, 
+        refs::AbstractVector{<:Real}, 
+        q::Real, 
+        n::Integer;
+        H::Integer=100, 
+        sorted=true, 
+        compare::AbstractVector{<:Real}=refs)
+    length(refs) == length(compare) == H || throw(ArgumentError("refs and compare must have H elements."))
+
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
     for i in 1:n
