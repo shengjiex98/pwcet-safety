@@ -2,7 +2,7 @@ using Serialization
 using Distributions: Pareto, quantile
 using DelimitedFiles
 
-push!(LOAD_PATH, "./src")
+push!(LOAD_PATH, "../src")
 print(Base.load_path())
 using Experiments
 
@@ -11,16 +11,16 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 39927918
+const JOB_ID = 41671552
 const file_num = 1:30
+
+const P = 0.99
+
 for i in file_num
-    PATH = "./$JOB_ID/$i"
+    PATH = "../data/mpc/$JOB_ID/$i"
     OUTPUT_FILE = "mpc-$JOB_ID-$i"
 
-
-    OUTPUT_PATH = "./data-proxy"
-
-    P = 0.99
+    OUTPUT_PATH = "../data-proxy"
 
     function parsefile(filename::String)
         b_s, q_s, h_s = split(filename, "-")[1:3]
