@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8g
-#SBATCH --time=0-01:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --mail-type=all                         # send email on job start, end and fault
 #SBATCH --mail-user=sxunique@cs.unc.edu
 
