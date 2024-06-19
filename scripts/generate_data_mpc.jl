@@ -26,13 +26,13 @@ const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
-const BATCHSIZE = 100_000
+const BATCHSIZE = 30_000
 
 # Continuous system definition
 const SYS = ss(tf([3, 1],[1, 0.6, 1]))
 
 # Number of json file
-const file_num = 1:30
+const FILE_NUM = 1:30
 
 # Reference and cycle reading
 # const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
@@ -40,10 +40,10 @@ const file_num = 1:30
 # Normalizing factor: 100_000 cycles per 0.2 second
 # const E_VALUES = sort(DATA[:, :t]) / 100_000 * 0.2
 
-DATA = [Dict() for _ in file_num]
-E_VALUES =[Float64[] for _ in file_num]
-for i in file_num
-    file_path = "../O2/output-O2-$i.json"
+DATA = [Dict() for _ in FILE_NUM]
+E_VALUES =[Float64[] for _ in FILE_NUM]
+for i in FILE_NUM
+    file_path = "./O2/output-O2-$i.json"
     DATA[i] = open(file_path) do file
         JSON.parse(file)
     end
@@ -60,7 +60,7 @@ const Q_VALUES = 0.01:0.01:0.99
 const PATH = "../data/mpc/$JOB_ID/"
 # <<< Experiment parameters <<<
 
-for i in file_num
+for i in FILE_NUM
     dir_path = joinpath(PATH, string(i))
     mkpath(dir_path)
 end
@@ -88,7 +88,7 @@ function get_y(t::Real, i::Integer)
     DATA[i]["y"][t_i]
 end
 
-for i in file_num
+for i in FILE_NUM
     q = Q_VALUES[TASK_ID]
     period = get_period(q, i)
     ref_values = map(t -> get_ref(t, i), 0:period:H)
