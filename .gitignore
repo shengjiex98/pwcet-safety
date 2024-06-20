@@ -7,3 +7,4 @@ slurm*.err
 data/
 *.jls
 *.json
+*.toml
