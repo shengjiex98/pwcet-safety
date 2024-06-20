@@ -11,7 +11,7 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 41671552
+const JOB_ID = 41703162
 const file_num = 1:30
 
 const P = 0.99
@@ -45,9 +45,8 @@ for i in file_num
     end |> stack |> transpose
 
     @info size(proxy)
-    @info proxy
+    # @info proxy
 
     serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", proxy)
     writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", proxy, ',')
 end
-
