@@ -40,33 +40,9 @@ using Revise, MATLABControlTest, ControlSystemsBase, CSV, DataFrames
 
 # ╔═╡ 566cc4d1-e984-44e4-ab06-4d05d903335a
 begin
-	function get_ref(t::Real)
-		t_i = floor(Int64, t / 0.1) + 1
-		@boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
-		DATA[t_i, :r]
-	end
-	function get_period(q::Real)
-    	e_i = ceil(Int64, q * length(E_VALUES))
-		@boundscheck 1 ≤ e_i ≤ length(E_VALUES) || throw(ArgumentError("t=$t out of 		bound"))
-		E_VALUES[e_i]
-	end
-	JOB_ID = 39927918
-	DATA = CSV.read("../MATLABControlTest.jl/output-jumping1000-1e3-O1.csv", DataFrame)
-	MPC_data = CSV.read("../data-proxy/mpc-$JOB_ID.csv", DataFrame)
-	E_VALUES = sort(DATA[:, :t])
-	q_values = 0.01:0.01:0.99
-	H = 1000 * 0.1
-	period = []
-	for q in q_values
-		push!(period, get_period(q)) 
-	end
-end
-
-# ╔═╡ cca95454-a0a8-4b99-b620-9b14af48c701
-let hs = sort(MPC_data[:, 2])
-	n = length(hs)
-	cdf_values = (1:n) ./ n
-	fig2 = plot(hs, cdf_values, xlabel="period", ylabel="cdf", title="CDF for mpc")
+	JOB_ID = 41671552
+	file_num = 1
+	MPC_data = CSV.read("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", DataFrame; header=false)
 end
 
 # ╔═╡ 07e901e0-5a41-4b02-8bd7-c50e67022b70
@@ -149,7 +125,7 @@ begin
 	p = 0.99
 	hs = sort(MPC_data[:, 2])
 	n = length(hs)
-	qs = (1:n) ./ n
+	qs = (1:n) ./ (n+1)
 end
 
 # ╔═╡ 07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
@@ -172,12 +148,13 @@ end
 
 # ╔═╡ b75abdc8-f875-48b5-9497-cf67b6c305fe
 let
-	JOB_ID = 39927918
-	full_matrix = readdlm("../data-proxy/mpc-$JOB_ID.csv", ',')
+	JOB_ID = 41671552
+	file_num = 20
+	full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
 	colors = let
-		res = fill(:lightblue, size(full_matrix, 1))
+		res = fill(:lightblue, size(full_matrix_ref, 1))
 		mindev = cap
-		for (i, row) in enumerate(eachrow(full_matrix))
+		for (i, row) in enumerate(eachrow(full_matrix_ref))
 			if row[4] < mindev
 				mindev = row[4]
 				res[i] = :red
@@ -189,18 +166,40 @@ let
 		qmin <= q <= qmax && 
 		hmin <= h <= hmax &&
 		dev <= cap
-	plot_results(full_matrix[:,1], full_matrix[:,2], full_matrix[:,4],
-		confidence=[full_matrix[:,4]-full_matrix[:,3] full_matrix[:,5]-full_matrix[:,4]],
-		filter_fn=filter_fn, title="CC2", draw_surface=surf,
+	fig1 = plot_results(full_matrix_ref[:,1], full_matrix_ref[:,2], full_matrix_ref[:,4],
+		confidence=[full_matrix_ref[:,4]-full_matrix_ref[:,3] full_matrix_ref[:,5]-full_matrix_ref[:,4]],
+		filter_fn=filter_fn, title="ref", draw_surface=surf,
 		mode=mode, az=az, el=el, color=colors)
+	
+	JOB_ID_2 = 41703162
+	full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+	colors = let
+		res = fill(:lightblue, size(full_matrix_y, 1))
+		mindev = cap
+		for (i, row) in enumerate(eachrow(full_matrix_y))
+			if row[4] < mindev
+				mindev = row[4]
+				res[i] = :red
+			end
+		end
+		res
+	end
+	filter_fn = (q, h, dev) -> 
+		qmin <= q <= qmax && 
+		hmin <= h <= hmax &&
+		dev <= cap
+	fig2 = plot_results(full_matrix_y[:,1], full_matrix_y[:,2], full_matrix_y[:,4],
+		confidence=[full_matrix_y[:,4]-full_matrix_y[:,3] full_matrix_y[:,5]-full_matrix_y[:,4]],
+		filter_fn=filter_fn, title="y", draw_surface=surf,
+		mode=mode, az=az, el=el, color=colors)
+	plot(fig1, fig2, plot_title="MPC")
 end
 
 # ╔═╡ Cell order:
 # ╠═e37c5e34-0191-11ef-0c30-379698507b64
 # ╠═39bbf368-4d9b-447a-be29-a0b74f391cf3
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
-# ╠═cca95454-a0a8-4b99-b620-9b14af48c701
-# ╠═07e901e0-5a41-4b02-8bd7-c50e67022b70
+# ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
 # ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
-# ╟─b75abdc8-f875-48b5-9497-cf67b6c305fe
+# ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
