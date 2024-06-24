@@ -148,51 +148,52 @@ end
 
 # ╔═╡ b75abdc8-f875-48b5-9497-cf67b6c305fe
 let
-	JOB_ID = 41671552
-	file_num = 20
-	full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
-	colors = let
-		res = fill(:lightblue, size(full_matrix_ref, 1))
-		mindev = cap
-		for (i, row) in enumerate(eachrow(full_matrix_ref))
-			if row[4] < mindev
-				mindev = row[4]
-				res[i] = :red
+	files = [1,2 ]
+	plots_list = []
+	for file_num in files
+		JOB_ID = 41671552
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
+		colors = let
+			res = fill(:lightblue, size(full_matrix_ref, 1))
+			mindev = cap
+			for (i, row) in enumerate(eachrow(full_matrix_ref))
+				if row[4] < mindev
+					mindev = row[4]
+					res[i] = :red
+				end
 			end
+			res
 		end
-		res
-	end
-	filter_fn = (q, h, dev) -> 
-		qmin <= q <= qmax && 
-		hmin <= h <= hmax &&
-		dev <= cap
-	fig1 = plot_results(full_matrix_ref[:,1], full_matrix_ref[:,2], full_matrix_ref[:,4],
-		confidence=[full_matrix_ref[:,4]-full_matrix_ref[:,3] full_matrix_ref[:,5]-full_matrix_ref[:,4]],
-		filter_fn=filter_fn, title="ref", draw_surface=surf,
-		mode=mode, az=az, el=el, color=colors)
-	
-	JOB_ID_2 = 41703162
-	full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
-	colors = let
-		res = fill(:lightblue, size(full_matrix_y, 1))
-		mindev = cap
-		for (i, row) in enumerate(eachrow(full_matrix_y))
-			if row[4] < mindev
-				mindev = row[4]
-				res[i] = :red
+		filter_fn = (q, h, dev) -> 
+			qmin <= q <= qmax && 
+			hmin <= h <= hmax &&
+			dev <= cap
+		fig1 = plot_results(full_matrix_ref[:,1], full_matrix_ref[:,2], full_matrix_ref[:,4],
+			confidence=[full_matrix_ref[:,4]-full_matrix_ref[:,3] full_matrix_ref[:,5]-full_matrix_ref[:,4]],
+			filter_fn=filter_fn, title="ref", draw_surface=surf,
+			mode=mode, az=az, el=el, color=colors)
+		
+		JOB_ID_2 = 41703162
+		full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+		colors = let
+			res = fill(:lightblue, size(full_matrix_y, 1))
+			mindev = cap
+			for (i, row) in enumerate(eachrow(full_matrix_y))
+				if row[4] < mindev
+					mindev = row[4]
+					res[i] = :red
+				end
 			end
+			res
 		end
-		res
+		fig2 = plot_results(full_matrix_y[:,1], full_matrix_y[:,2], full_matrix_y[:,4],
+			confidence=[full_matrix_y[:,4]-full_matrix_y[:,3] full_matrix_y[:,5]-full_matrix_y[:,4]],
+			filter_fn=filter_fn, title="y", draw_surface=surf,
+			mode=mode, az=az, el=el, color=colors)
+		plots = plot(fig1, fig2, plot_title="MPC_$file_num")
+		push!(plots_list, plots)
 	end
-	filter_fn = (q, h, dev) -> 
-		qmin <= q <= qmax && 
-		hmin <= h <= hmax &&
-		dev <= cap
-	fig2 = plot_results(full_matrix_y[:,1], full_matrix_y[:,2], full_matrix_y[:,4],
-		confidence=[full_matrix_y[:,4]-full_matrix_y[:,3] full_matrix_y[:,5]-full_matrix_y[:,4]],
-		filter_fn=filter_fn, title="y", draw_surface=surf,
-		mode=mode, az=az, el=el, color=colors)
-	plot(fig1, fig2, plot_title="MPC")
+	plots_list
 end
 
 # ╔═╡ Cell order:
