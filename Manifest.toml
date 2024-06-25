@@ -1219,7 +1219,9 @@ version = "1.9.4+0"
 
 [[deps.MATLABControlTest]]
 deps = ["ControlSystemsBase"]
-path = "/nas/longleaf/home/sxunique/.julia/dev/MATLABControlTest.jl"
+git-tree-sha1 = "aef0025bddf4aba2c4cc604fcfe89ad1e852dff5"
+repo-rev = "main"
+repo-url = "https://github.com/shengjiex98/MATLABControlTest.jl.git"
 uuid = "6790f353-5258-4812-a252-2151a53ca0c7"
 version = "1.0.0-DEV"
 
