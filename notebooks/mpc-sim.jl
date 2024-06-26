@@ -24,6 +24,7 @@ begin
 	using DelimitedFiles
 	using Distributions: Distribution, Normal, Pareto, Uniform, cdf, pdf, quantile
 	using Plots
+	using Colors
 	plotlyjs()
 
 	push!(LOAD_PATH, "../src")
@@ -126,6 +127,7 @@ begin
 	hs = sort(MPC_data[:, 2])
 	n = length(hs)
 	qs = (1:n) ./ (n+1)
+	available_colors = [:red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream]
 end
 
 # ╔═╡ 07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
@@ -148,9 +150,13 @@ end
 
 # ╔═╡ b75abdc8-f875-48b5-9497-cf67b6c305fe
 let
-	files = [1,2 ]
+	files = 1:10
+	len = length(files)
 	plots_list = []
+	color_names = available_colors[1:len]
+	x = 1
 	for file_num in files
+		color = color_names[x]
 		JOB_ID = 41671552
 		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
 		colors = let
@@ -159,7 +165,7 @@ let
 			for (i, row) in enumerate(eachrow(full_matrix_ref))
 				if row[4] < mindev
 					mindev = row[4]
-					res[i] = :red
+					res[i] = color
 				end
 			end
 			res
@@ -181,7 +187,7 @@ let
 			for (i, row) in enumerate(eachrow(full_matrix_y))
 				if row[4] < mindev
 					mindev = row[4]
-					res[i] = :red
+					res[i] = color
 				end
 			end
 			res
@@ -192,6 +198,7 @@ let
 			mode=mode, az=az, el=el, color=colors)
 		plots = plot(fig1, fig2, plot_title="MPC_$file_num")
 		push!(plots_list, plots)
+		x += 1
 	end
 	plots_list
 end
