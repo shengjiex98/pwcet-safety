@@ -46,6 +46,9 @@ begin
 	MPC_data = CSV.read("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", DataFrame; header=false)
 end
 
+# ╔═╡ 48979958-2f71-4c98-94dc-4d3023beaf1a
+
+
 # ╔═╡ 07e901e0-5a41-4b02-8bd7-c50e67022b70
 function plot_results(
 		q_values::Vector{<:Real},
@@ -148,6 +151,57 @@ let go
 	"""
 end
 
+# ╔═╡ 2e99fe56-345c-4d2a-94ca-941fe663b924
+let
+	files = 1:30
+	combined_matrix_ref = []
+	combined_matrix_y = []
+	JOB_ID = 41671552
+	JOB_ID_2 = 41703162
+	for file_num in files
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
+		if size(combined_matrix_ref, 1) == 0 || size(combined_matrix_ref, 2) == 0
+			num_rows = size(full_matrix_ref, 1)
+			file_index = fill(file_num, num_rows)
+			combined_matrix_ref = hcat(full_matrix_ref, file_index)
+		end
+		for i in 1:size(full_matrix_ref, 1)
+			if full_matrix_ref[i, :][4] < combined_matrix_ref[i, :][4]
+				combined_matrix_ref[i, :] = [full_matrix_ref[i, :]; file_num]
+			end
+		end
+		full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+		if size(combined_matrix_y, 1) == 0 || size(combined_matrix_y, 2) == 0
+			num_rows = size(full_matrix_y, 1)
+			file_index = fill(file_num, num_rows)
+			combined_matrix_y = hcat(full_matrix_y, file_index)
+		end
+		for i in 1:size(full_matrix_y, 1)
+			if full_matrix_y[i, :][4] < combined_matrix_y[i, :][4]
+				combined_matrix_y[i, :] = [full_matrix_y[i, :]; file_num]
+			end
+		end
+	end
+	x_ref = combined_matrix_ref[:, 1]
+	y_ref = combined_matrix_ref[:, 4]
+	color_index_ref = map(Int, combined_matrix_ref[:, end])
+	colors_ref = [available_colors[i] for i in color_index_ref]
+	hover_text_ref = map(x_ref, y_ref, color_index_ref) do q, h, dev
+		@sprintf "q=%.3f dev=%.3f flag=%.3f" q h dev
+	end
+	plot_ref = scatter(x_ref, y_ref, markercolor=colors_ref, legend=false, xlabel="quantile", ylabel="deviation", title="ref", hover=hover_text_ref)
+	
+	x_y = combined_matrix_y[:, 1]
+	y_y = combined_matrix_y[:, 4]
+	color_index_y = map(Int, combined_matrix_y[:, end])
+	colors_y = [available_colors[i] for i in color_index_y]
+	hover_text_y = map(x_y, y_y, color_index_y) do q, h, dev
+		@sprintf "q=%.3f dev=%.3f flag=%.3f" q h dev
+	end
+	plot_y = scatter(x_y, y_y, markercolor=colors_y, legend=false, xlabel="quantile", ylabel="deviation", title="y", hover=hover_text_y)
+	plots = plot(plot_ref, plot_y, plot_title="Pareto Front for all MPC flags")
+end
+
 # ╔═╡ b75abdc8-f875-48b5-9497-cf67b6c305fe
 let
 	files = 1:10
@@ -207,7 +261,9 @@ end
 # ╠═e37c5e34-0191-11ef-0c30-379698507b64
 # ╠═39bbf368-4d9b-447a-be29-a0b74f391cf3
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
-# ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
+# ╠═48979958-2f71-4c98-94dc-4d3023beaf1a
+# ╠═07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
 # ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
+# ╠═2e99fe56-345c-4d2a-94ca-941fe663b924
 # ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
