@@ -151,6 +151,43 @@ let go
 	"""
 end
 
+# ╔═╡ 6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
+let
+	files = 1:30
+	combined_matrix_ref = []
+	combined_matrix_y = []
+	JOB_ID = 41671552
+	JOB_ID_2 = 41703162
+	for file_num in files
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
+		num_rows = size(full_matrix_ref, 1)
+		file_index = fill(file_num, num_rows)
+		matrix_ref = hcat(full_matrix_ref, file_index)
+		if size(combined_matrix_ref, 1) == 0 || size(combined_matrix_ref, 2) == 0
+			combined_matrix_ref = matrix_ref
+		end
+		combined_matrix_ref = vcat(combined_matrix_ref, matrix_ref)
+	end
+	sorted_matrix = sortslices(combined_matrix_ref,dims=1)
+	n_columns = size(sorted_matrix, 2)
+	ref = reshape(sorted_matrix[1, :], 1, :)
+	min_dev = sorted_matrix[1, :][4]
+    for i in 2:size(sorted_matrix, 1)
+		if sorted_matrix[i, :][4] < min_dev
+			min_dev = sorted_matrix[i, :][4]
+			ref = vcat(ref, reshape(sorted_matrix[i, :], 1, :))
+		end
+	end
+	x_ref = ref[:, 2]
+	y_ref = ref[:, 4]
+	color_index_ref = map(Int, ref[:, end])
+	colors_ref = [available_colors[i] for i in color_index_ref]
+	hover_text_ref = map(x_ref, y_ref, color_index_ref) do q, h, dev
+		@sprintf "q=%.5f dev=%.3f flag=%.3f" q h dev
+	end
+	plot_ref = scatter(x_ref, y_ref, markercolor=colors_ref, legend=false, xlabel="time", ylabel="deviation", title="ref", hover=hover_text_ref)
+end
+
 # ╔═╡ 2e99fe56-345c-4d2a-94ca-941fe663b924
 let
 	files = 1:30
@@ -265,5 +302,6 @@ end
 # ╠═07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
 # ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
+# ╠═6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
 # ╠═2e99fe56-345c-4d2a-94ca-941fe663b924
 # ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
