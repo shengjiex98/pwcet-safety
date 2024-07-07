@@ -179,11 +179,12 @@ let
 		end
 	end
 	x_ref = ref[:, 2]
+	q_ref = ref[:, 1]
 	y_ref = ref[:, 4]
 	color_index_ref = map(Int, ref[:, end])
 	colors_ref = [available_colors[i] for i in color_index_ref]
-	hover_text_ref = map(x_ref, y_ref, color_index_ref) do q, h, dev
-		@sprintf "q=%.5f dev=%.3f flag=%.3f" q h dev
+	hover_text_ref = map(q_ref, x_ref, y_ref, color_index_ref) do q, p, h, dev
+		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 	end
 	plot_ref = scatter(x_ref, y_ref, markercolor=colors_ref, legend=false, xlabel="time", ylabel="deviation", title="ref", hover=hover_text_ref)
 end
