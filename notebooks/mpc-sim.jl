@@ -46,9 +46,6 @@ begin
 	MPC_data = CSV.read("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", DataFrame; header=false)
 end
 
-# ╔═╡ 48979958-2f71-4c98-94dc-4d3023beaf1a
-
-
 # ╔═╡ 07e901e0-5a41-4b02-8bd7-c50e67022b70
 function plot_results(
 		q_values::Vector{<:Real},
@@ -147,7 +144,7 @@ let go
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
 	| cap 			   | $(@bind cap  Slider(1500:1:18000, default=18000, show_value=true)) |
-	| all points       | $(@bind all_points CheckBox(default=true)) |
+	| all points       | $(@bind all_points CheckBox(default=false)) |
 	"""
 end
 
@@ -167,26 +164,70 @@ let
 			combined_matrix_ref = matrix_ref
 		end
 		combined_matrix_ref = vcat(combined_matrix_ref, matrix_ref)
+		full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+		num_rows = size(full_matrix_y, 1)
+		file_index = fill(file_num, num_rows)
+		matrix_y = hcat(full_matrix_y, file_index)
+		if size(combined_matrix_y, 1) == 0 || size(combined_matrix_y, 2) == 0
+			combined_matrix_y = matrix_y
+		end
+		combined_matrix_y = vcat(combined_matrix_y, matrix_y)
 	end
-	sorted_matrix = sortslices(combined_matrix_ref,dims=1)
-	n_columns = size(sorted_matrix, 2)
-	ref = reshape(sorted_matrix[1, :], 1, :)
-	min_dev = sorted_matrix[1, :][4]
-    for i in 2:size(sorted_matrix, 1)
-		if sorted_matrix[i, :][4] < min_dev
-			min_dev = sorted_matrix[i, :][4]
-			ref = vcat(ref, reshape(sorted_matrix[i, :], 1, :))
+	sorted_matrix_ref = sortslices(combined_matrix_ref,dims=1)
+	n_columns = size(sorted_matrix_ref, 2)
+	ref = reshape(sorted_matrix_ref[1, :], 1, :)
+	min_dev = sorted_matrix_ref[1, :][4]
+    for i in 2:size(sorted_matrix_ref, 1)
+		if sorted_matrix_ref[i, :][4] < min_dev
+			min_dev = sorted_matrix_ref[i, :][4]
+			ref = vcat(ref, reshape(sorted_matrix_ref[i, :], 1, :))
+		end
+	end
+	sorted_matrix_y = sortslices(combined_matrix_y,dims=1)
+	n_columns = size(sorted_matrix_y, 2)
+	y = reshape(sorted_matrix_y[1, :], 1, :)
+	min_dev = sorted_matrix_y[1, :][4]
+    for i in 2:size(sorted_matrix_y, 1)
+		if sorted_matrix_y[i, :][4] < min_dev
+			min_dev = sorted_matrix_y[i, :][4]
+			y = vcat(y, reshape(sorted_matrix_y[i, :], 1, :))
 		end
 	end
 	x_ref = ref[:, 2]
 	q_ref = ref[:, 1]
 	y_ref = ref[:, 4]
-	color_index_ref = map(Int, ref[:, end])
+	color_index_ref = map(Int, ref[:, 6])
 	colors_ref = [available_colors[i] for i in color_index_ref]
 	hover_text_ref = map(q_ref, x_ref, y_ref, color_index_ref) do q, p, h, dev
 		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 	end
 	plot_ref = scatter(x_ref, y_ref, markercolor=colors_ref, legend=false, xlabel="time", ylabel="deviation", title="ref", hover=hover_text_ref)
+	plot!(x_ref, y_ref, label="Pareto-Front ref")
+	if all_points
+		all_color_index_ref = map(Int, sorted_matrix_ref[:, 6])
+		all_hover_text_ref = map(sorted_matrix_ref[:, 1], sorted_matrix_ref[:, 2], sorted_matrix_ref[:, 4], all_color_index_ref) do q, p, h, dev
+			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		end
+		scatter!(sorted_matrix_ref[:, 2], sorted_matrix_ref[:, 4],  markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_ref)
+	end
+	x_y = y[:, 2]
+	q_y = y[:, 1]
+	y_y = y[:, 4]
+	color_index_y = map(Int, y[:, 6])
+	colors_y = [available_colors[i] for i in color_index_y]
+	hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
+		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+	end
+	plot_y = scatter(x_y, y_y, markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
+	plot!(x_y, y_y, label="Pareto-Front y")
+	if all_points
+		all_color_index_y = map(Int, sorted_matrix_y[:, 6])
+		all_hover_text_y = map(sorted_matrix_y[:, 1], sorted_matrix_y[:, 2], sorted_matrix_y[:, 4], all_color_index_y) do q, p, h, dev
+			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		end
+		scatter!(sorted_matrix_y[:, 2], sorted_matrix_y[:, 4],  markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_y)
+	end
+	plots = plot(plot_ref, plot_y, plot_title="Pareto Front for all MPC flags")
 end
 
 # ╔═╡ 2e99fe56-345c-4d2a-94ca-941fe663b924
@@ -299,8 +340,7 @@ end
 # ╠═e37c5e34-0191-11ef-0c30-379698507b64
 # ╠═39bbf368-4d9b-447a-be29-a0b74f391cf3
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
-# ╠═48979958-2f71-4c98-94dc-4d3023beaf1a
-# ╠═07e901e0-5a41-4b02-8bd7-c50e67022b70
+# ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
 # ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
 # ╠═6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
