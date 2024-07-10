@@ -32,7 +32,7 @@ const BATCHSIZE = 30_000
 const SYS = ss(tf([3, 1],[1, 0.6, 1]))
 
 # Number of json file
-const FILE_NUM = 1:30
+const FILE_NUM = 1:100
 
 # Reference and cycle reading
 # const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
@@ -43,7 +43,7 @@ const FILE_NUM = 1:30
 DATA = [Dict() for _ in FILE_NUM]
 E_VALUES =[Float64[] for _ in FILE_NUM]
 for i in FILE_NUM
-    file_path = "./O2/output-O2-$i.json"
+    file_path = "../data/output-O2-samer/output-O2-samer-$i.json"
     DATA[i] = open(file_path) do file
         JSON.parse(file)
     end
@@ -54,10 +54,10 @@ end
 const H = 1000 * 0.1
 
 # Chosen quantiles
-const Q_VALUES = 0.01:0.01:0.99
+const Q_VALUES = 0.01:0.01:1.0
 
 # Save directory
-const PATH = "../data/mpc/$JOB_ID/"
+const PATH = "../data/mpc-uniform-period/$JOB_ID/"
 # <<< Experiment parameters <<<
 
 for i in FILE_NUM
@@ -76,10 +76,18 @@ function get_ref(t::Real, i::Integer)
     DATA[i]["r"][t_i]
 end
 
-function get_period(q::Real, i::Integer)
+# Get period as a quantile from the runtime distribution
+function get_period_distribution(q::Real, i::Integer)
     e_i = ceil(Int64, q * length(E_VALUES[i]))
     @boundscheck 1 ≤ e_i ≤ length(E_VALUES[i]) || throw(ArgumentError("t=$t out of 		bound"))
     E_VALUES[i][e_i]
+end
+
+# Get period as a quantile uniformly between min and max runtimes
+function get_period_uniform(percentage::Real, i::Integer)
+    p_min = E_VALUES[i][1]
+    p_max = E_VALUES[i][end]
+    p_min + (p_max - p_min) * percentage
 end
 
 function get_y(t::Real, i::Integer)
@@ -90,7 +98,13 @@ end
 
 for i in FILE_NUM
     q = Q_VALUES[TASK_ID]
-    period = get_period(q, i)
+
+    # # Choosing the period from the distribution
+    # period = get_period_quantile(q, i)
+
+    # Choosing the period uniformly between min and max period
+    period = get_period_uniform(q, i)
+
     ref_values = map(t -> get_ref(t, i), 0:period:H)
     y_values = map(t -> get_y(t, i), 0:period:H)
     H_steps = length(ref_values)
