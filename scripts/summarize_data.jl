@@ -31,9 +31,13 @@ for i in file_num
     end
 
     @info "Reading files in $PATH..."
+    flush(stderr)
+
     FILES = readdir(PATH)
     BATCHSIZE =parsefile(FILES[1])[1]
+
     @info "$(length(FILES)) files found. Batch size is $BATCHSIZE"
+    flush(stderr)
 
     I99 = round(Int64, BATCHSIZE * P)
     I_LOW, I_HIGH = find_intervals(BATCHSIZE, P, 0.05, centered=true)[1]
@@ -45,8 +49,12 @@ for i in file_num
     end |> stack |> transpose
 
     @info size(proxy)
+    flush(stderr)
     # @info proxy
 
+    @info "Writing results to files..."
+    flush(stderr)
+    
     serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", proxy)
     writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", proxy, ',')
 end
