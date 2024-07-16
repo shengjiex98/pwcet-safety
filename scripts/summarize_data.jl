@@ -11,14 +11,15 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 41703162
-const file_num = 1:30
+const JOB_ID = 43253817
+const file_num = 1:100
 
 const P = 0.99
 
 for i in file_num
-    PATH = "../data/mpc/$JOB_ID/$i"
-    OUTPUT_FILE = "mpc-$JOB_ID-$i"
+    # PATH = "../data/mpc/$JOB_ID/$i"
+    PATH = "../data/mpc-uniform-period/$JOB_ID/$i"
+    OUTPUT_FILE = "mpc-uniform-period-$JOB_ID-$i"
 
     OUTPUT_PATH = "../data-proxy"
 
