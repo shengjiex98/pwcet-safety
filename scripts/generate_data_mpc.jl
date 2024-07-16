@@ -13,16 +13,13 @@ using Distributions: Pareto, Normal, cdf, quantile
 
 using MATLABControlTest
 
-push!(LOAD_PATH, "../src")
+push!(LOAD_PATH, "$(@__DIR__)/../src")
 using Experiments
 using Benchmarks
 using ContinuousSims: nominal_trajectory
 
 @info "Setting parameters"
 flush(stderr)
-
-const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
-const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
@@ -31,8 +28,37 @@ const BATCHSIZE = 30_000
 # Continuous system definition
 const SYS = ss(tf([3, 1],[1, 0.6, 1]))
 
+# Time horizon
+const H = 1000 * 0.1
+
+# Chosen quantiles
+const Q_VALUES = 0.01:0.01:1.0
+
 # Number of json file
 const FILE_NUM = 1:100
+
+const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
+const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
+
+# >>> Enable one of the two blocks >>>
+# if TASK_ID > length(Q_VALUES)
+#     println("TASK_ID exceeds available parameters. Exiting.")
+#     exit()
+# end
+
+if TASK_ID ∉ FILE_NUM
+    println("TASK_ID exceeds available file numbers. Exiting.")
+    exit()
+end
+# <<< Enable one of the two blocks <<<
+
+# Timing file PATH
+const TIMING_FILE = "$(@__DIR__)/../data/output-O2-samer/output-O2-samer-$TASK_ID.json"
+
+# Save directory
+const SAVE_PATH = "$(@__DIR__)/../data/mpc-uniform-period/$JOB_ID/$TASK_ID/"
+
+# <<< Experiment parameters <<<
 
 # Reference and cycle reading
 # const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
@@ -40,73 +66,54 @@ const FILE_NUM = 1:100
 # Normalizing factor: 100_000 cycles per 0.2 second
 # const E_VALUES = sort(DATA[:, :t]) / 100_000 * 0.2
 
-DATA = [Dict() for _ in FILE_NUM]
-E_VALUES =[Float64[] for _ in FILE_NUM]
-for i in FILE_NUM
-    file_path = "../data/output-O2-samer/output-O2-samer-$i.json"
-    DATA[i] = open(file_path) do file
-        JSON.parse(file)
-    end
-    E_VALUES[i] = sort(DATA[i]["t"]) / 100_000 * 0.2
+@info "Reading timing file"
+flush(stderr)
+
+const DATA = open(TIMING_FILE) do file
+    JSON.parse(file)
 end
+const E_VALUES = sort(DATA["t"]) / 100_000 * 0.2
 
-# Time horizon
-const H = 1000 * 0.1
+@info "Ref length" length(E_VALUES)
 
-# Chosen quantiles
-const Q_VALUES = 0.01:0.01:1.0
+mkpath(SAVE_PATH)
 
-# Save directory
-const PATH = "../data/mpc-uniform-period/$JOB_ID/"
-# <<< Experiment parameters <<<
-
-for i in FILE_NUM
-    dir_path = joinpath(PATH, string(i))
-    mkpath(dir_path)
-end
-
-if TASK_ID > length(Q_VALUES)
-    println("TASK_ID exceeds available parameters. Exiting.")
-    exit()
-end
-
-function get_ref(t::Real, i::Integer)
+function get_ref(t::Real)
     t_i = floor(Int64, t / 0.1) + 1
     @boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
-    DATA[i]["r"][t_i]
+    DATA["r"][t_i]
 end
 
 # Get period as a quantile from the runtime distribution
-function get_period_distribution(q::Real, i::Integer)
-    e_i = ceil(Int64, q * length(E_VALUES[i]))
-    @boundscheck 1 ≤ e_i ≤ length(E_VALUES[i]) || throw(ArgumentError("t=$t out of 		bound"))
-    E_VALUES[i][e_i]
+function get_period_distribution(q::Real)
+    e_i = ceil(Int64, q * length(E_VALUES))
+    @boundscheck 1 ≤ e_i ≤ length(E_VALUES) || throw(ArgumentError("t=$t out of bound"))
+    E_VALUES[e_i]
 end
 
 # Get period as a quantile uniformly between min and max runtimes
-function get_period_uniform(percentage::Real, i::Integer)
-    p_min = E_VALUES[i][1]
-    p_max = E_VALUES[i][end]
+function get_period_uniform(percentage::Real)
+    p_min = E_VALUES[1]
+    p_max = E_VALUES[end]
     p_min + (p_max - p_min) * percentage
 end
 
-function get_y(t::Real, i::Integer)
+function get_y(t::Real)
     t_i = floor(Int64, t / 0.1) + 1
     @boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
-    DATA[i]["y"][t_i]
+    DATA["y"][t_i]
 end
 
-for i in FILE_NUM
-    q = Q_VALUES[TASK_ID]
-
+@info "Running simulations"
+for q in Q_VALUES
     # # Choosing the period from the distribution
-    # period = get_period_quantile(q, i)
+    # period = get_period_quantile(q)
 
     # Choosing the period uniformly between min and max period
-    period = get_period_uniform(q, i)
+    period = get_period_uniform(q)
 
-    ref_values = map(t -> get_ref(t, i), 0:period:H)
-    y_values = map(t -> get_y(t, i), 0:period:H)
+    ref_values = map(t -> get_ref(t), 0:period:H)
+    y_values = map(t -> get_y(t), 0:period:H)
     H_steps = length(ref_values)
 
     sysd = c2d(SYS, period)
@@ -114,16 +121,17 @@ for i in FILE_NUM
 
     @info "Threads count:" Threads.nthreads()
     @info "System dynamics:" SYS sysd
-    @info "Parameters:" BATCHSIZE H q period
+    @info "Parameters:" BATCHSIZE q period H H_steps
     flush(stderr)
 
     filename = generate_filename(BATCHSIZE, q, period)
-    if isfile("$PATH/$i/$filename.jls")
+    if isfile("$SAVE_PATH/$filename.jls")
         @info "$filename.jls exists, exiting."
-        exit()
+        # exit()
+        continue
     end
     t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=y_values)
     @info t
-    serialize("$PATH/$i/$filename.jls", data)
-    @info "Saved at $PATH/$i/$filename.jls"
+    serialize("$SAVE_PATH/$filename.jls", data)
+    @info "Saved at $SAVE_PATH/$filename.jls"
 end
