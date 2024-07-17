@@ -130,7 +130,7 @@ for q in Q_VALUES
         # exit()
         continue
     end
-    t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=y_values)
+    t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=ref_values)
     @info t
     serialize("$SAVE_PATH/$filename.jls", data)
     @info "Saved at $SAVE_PATH/$filename.jls"

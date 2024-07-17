@@ -11,7 +11,7 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 43253817
+const JOB_ID = 43775543
 const file_num = 1:100
 
 const P = 0.99
@@ -19,9 +19,9 @@ const P = 0.99
 for i in file_num
     # PATH = "../data/mpc/$JOB_ID/$i"
     PATH = "../data/mpc-uniform-period/$JOB_ID/$i"
-    OUTPUT_FILE = "mpc-uniform-period-$JOB_ID-$i"
+    OUTPUT_FILE = "$JOB_ID-$i"
 
-    OUTPUT_PATH = "../data-proxy"
+    OUTPUT_PATH = "../data-proxy/mpc-flags-uniform-period/ref/"
 
     function parsefile(filename::String)
         b_s, q_s, h_s = split(filename, "-")[1:3]
