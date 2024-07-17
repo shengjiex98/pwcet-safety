@@ -153,10 +153,10 @@ let
 	files = 1:30
 	combined_matrix_ref = []
 	combined_matrix_y = []
-	JOB_ID = 41671552
-	JOB_ID_2 = 41703162
+	JOB_ID = 43775543
+	JOB_ID_2 = 43253817
 	for file_num in files
-		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID-$file_num.csv", ',')
 		num_rows = size(full_matrix_ref, 1)
 		file_index = fill(file_num, num_rows)
 		matrix_ref = hcat(full_matrix_ref, file_index)
@@ -164,7 +164,7 @@ let
 			combined_matrix_ref = matrix_ref
 		end
 		combined_matrix_ref = vcat(combined_matrix_ref, matrix_ref)
-		full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2-$file_num.csv", ',')
 		num_rows = size(full_matrix_y, 1)
 		file_index = fill(file_num, num_rows)
 		matrix_y = hcat(full_matrix_y, file_index)
@@ -235,10 +235,10 @@ let
 	files = 1:30
 	combined_matrix_ref = []
 	combined_matrix_y = []
-	JOB_ID = 41671552
-	JOB_ID_2 = 41703162
+	JOB_ID = 43775543
+	JOB_ID_2 = 43253817
 	for file_num in files
-		full_matrix_ref = readdlm("../data-proxy/mpc-flags/ref/mpc-$JOB_ID-$file_num.csv", ',')
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID-$file_num.csv", ',')
 		if size(combined_matrix_ref, 1) == 0 || size(combined_matrix_ref, 2) == 0
 			num_rows = size(full_matrix_ref, 1)
 			file_index = fill(file_num, num_rows)
@@ -249,7 +249,7 @@ let
 				combined_matrix_ref[i, :] = [full_matrix_ref[i, :]; file_num]
 			end
 		end
-		full_matrix_y = readdlm("../data-proxy/mpc-flags/y/mpc-$JOB_ID_2-$file_num.csv", ',')
+		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2-$file_num.csv", ',')
 		if size(combined_matrix_y, 1) == 0 || size(combined_matrix_y, 2) == 0
 			num_rows = size(full_matrix_y, 1)
 			file_index = fill(file_num, num_rows)
@@ -343,6 +343,6 @@ end
 # ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
 # ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
-# ╠═6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
-# ╠═2e99fe56-345c-4d2a-94ca-941fe663b924
-# ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
+# ╟─6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
+# ╟─2e99fe56-345c-4d2a-94ca-941fe663b924
+# ╟─b75abdc8-f875-48b5-9497-cf67b6c305fe
