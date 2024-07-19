@@ -32,7 +32,7 @@ const SYS = ss(tf([3, 1],[1, 0.6, 1]))
 const H = 1000 * 0.1
 
 # Chosen quantiles
-const Q_VALUES = 0.01:0.01:1.0
+const I_VALUES = 0.01:0.01:1.0
 
 # Number of json file
 const FILE_NUM = 1:100
@@ -41,7 +41,7 @@ const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
 const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Enable one of the two blocks >>>
-# if TASK_ID > length(Q_VALUES)
+# if TASK_ID > length(I_VALUES)
 #     println("TASK_ID exceeds available parameters. Exiting.")
 #     exit()
 # end
@@ -98,6 +98,12 @@ function get_period_uniform(percentage::Real)
     p_min + (p_max - p_min) * percentage
 end
 
+function get_q_from_period(period::Real)
+    e_i = findfirst(x -> x >= period, E_VALUES)
+    @boundscheck e_i !== nothing || throw(ArgumentError("period=$period not found"))
+    e_i / length(E_VALUES)
+end
+
 function get_y(t::Real)
     t_i = floor(Int64, t / 0.1) + 1
     @boundscheck 1 ≤ t_i ≤ 1000 || throw(ArgumentError("t=$t out of bound"))
@@ -105,12 +111,14 @@ function get_y(t::Real)
 end
 
 @info "Running simulations"
-for q in Q_VALUES
+for i in I_VALUES
     # # Choosing the period from the distribution
-    # period = get_period_quantile(q)
+    # period = get_period_quantile(i)
+    # q = i
 
     # Choosing the period uniformly between min and max period
-    period = get_period_uniform(q)
+    period = get_period_uniform(i)
+    q = get_q_from_period(period)
 
     ref_values = map(t -> get_ref(t), 0:period:H)
     y_values = map(t -> get_y(t), 0:period:H)
