@@ -95,11 +95,11 @@ function generate_samples_mpc(
 end
 
 function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer; th::Integer=Threads.nthreads())
-    @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q h n th
+    @sprintf "b%.1e-q%.6f-h%.9g-n%i-th%i" batchsize q h n th
 end
 
 function generate_filename(batchsize::Integer, q::Real, h::Real; th::Integer=Threads.nthreads())
-    @sprintf "b%.1e-q%.9g-h%.9g-th%i" batchsize q h th
+    @sprintf "b%.1e-q%.6f-h%.9g-th%i" batchsize q h th
 end
 
 """
