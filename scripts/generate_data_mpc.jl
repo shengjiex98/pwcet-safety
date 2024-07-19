@@ -99,9 +99,8 @@ function get_period_uniform(percentage::Real)
 end
 
 function get_q_from_period(period::Real)
-    e_i = findfirst(x -> x >= period, E_VALUES)
-    @boundscheck e_i !== nothing || throw(ArgumentError("period=$period not found"))
-    e_i / length(E_VALUES)
+    e_i = findfirst(x -> x > period, E_VALUES)
+    if e_i !== nothing; (e_i-1) / length(E_VALUES) else 1 end
 end
 
 function get_y(t::Real)
