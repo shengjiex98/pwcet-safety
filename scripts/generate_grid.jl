@@ -7,8 +7,9 @@ using ControlSystemsBase
 using ControlTimingSafety
 using LinearAlgebra: I
 using Distributions: Pareto, Normal, cdf, quantile
+using Printf
 
-push!(LOAD_PATH, "../src")
+push!(LOAD_PATH, "$(@__DIR__)/../src")
 using Experiments
 using Benchmarks
 using ContinuousSims: nominal_trajectory
@@ -21,7 +22,7 @@ const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
-const BATCHSIZE = 100_000
+const BATCHSIZE = 300_000
 
 # Continuous SYStem definition
 const SYS = benchmarks[:F1T]
@@ -31,7 +32,7 @@ const K = lqr(SYS, I, I)
 const H = 100 * 0.02
 
 # Execution time distribution
-const DIST = Pareto(1.5, 0.03)
+const DIST = Pareto(1.5, 0.01)
 # DIST = Normal(0.03, 0.005)
 const P_MIN = quantile(DIST, 0.01)
 const P_MAX = quantile(DIST, 0.99)
@@ -42,23 +43,20 @@ const I_VALUES = 0.01:0.01:1.0
 # Utilization values
 const U_VALUES = 0.01:0.01:1.0
 
-const UTIL = TASK_ID/100
-@assert UTIL ∈ U_VALUES "TASK_ID exceeds utilization range. Exiting."
+const IDX = TASK_ID/100
+@assert IDX ∈ I_VALUES "TASK_ID exceeds index range.."
+const PERIOD = P_MIN + (P_MAX - P_MIN) * IDX
 
-PATH = "../data/nmc-grid/$JOB_ID-$DIST/"
-# <<< Experiment parameters <<<
-
+PATH = "$(@__DIR__)/../data/nmc-grid/$JOB_ID-$DIST/$PERIOD/"
 mkpath(PATH)
-
-function get_period_uniform(percentage:: Real)
-    @assert 0 <= util <= 1 "Percentage value has to be in [0, 1]"
-    P_MIN + (P_MAX - P_MIN) * percentage
-end
+# <<< Experiment parameters <<<
 
 function get_q_from_period(period::Real; util::Real=1)
     @assert 0 < util <= 1 "Utilization value has to be in (0, 1]"
     cdf(DIST, period * util)
 end
+
+const H_STEPS = floor(Int64, H / PERIOD)
 
 # Set initial conditions
 x0 = fill(1., SYS.nx)
@@ -68,31 +66,33 @@ z0 = [x0; u0]
 @info "Threads count:" Threads.nthreads()
 @info "Distribution:" DIST
 @info "System dynamics:" SYS K z0
-@info "Parameters:" BATCHSIZE H
+@info "Parameters:" BATCHSIZE H PERIOD
 @info "Calculating the nominal_trajectory."
 flush(stderr)
 
-z_nom = nominal_trajectory(SYS, (x, t) -> -K * x, period, H, x0)
+z_nom = nominal_trajectory(SYS, (x, t) -> -K * x, PERIOD, H, x0)
+
+# Construct automaton
+a = hold_kill(c2d(SYS, PERIOD), delay_lqr(SYS, PERIOD))
 
 @info "Running simulations"
 flush(stderr)
-for i in I_VALUES
-    period = get_period_uniform(i)
-    q = get_q_from_period(period, util=UTIL)
-    H_steps = floor(Int64, H / period)
+for u in U_VALUES
+    q = get_q_from_period(PERIOD, util=u)
+    if q == 0
+        continue
+    end
 
-    @info "Iteration parameters:" period q H_steps
+    @info "Iteration parameters:" PERIOD q H_STEPS
     flush(stderr)
 
-    # Construct automaton
-    a = hold_kill(c2d(SYS, period), delay_lqr(SYS, period))
-
-    filename = generate_filename(BATCHSIZE, q, period)
+    # filename = generate_filename(BATCHSIZE, q, PERIOD) * "-u$u"
+    filename = @sprintf "b%.1e-q%.6f-h%.6g-u%.2f-th%i" BATCHSIZE q PERIOD u Threads.nthreads()
     if isfile("$PATH/$filename.jls")
         @info "$filename.jls exists, exiting."
-        return
+        continue
     end
-    t = @elapsed data = generate_samples(a, z0, q, BATCHSIZE; H=H_steps, nominal_trajectory=z_nom)
+    t = @elapsed data = generate_samples(a, z0, q, BATCHSIZE; H=H_STEPS, nominal_trajectory=z_nom)
     @info "Elapsed time:" t
     serialize("$PATH/$filename.jls", data)
     @info "Saved at $PATH/$filename.jls"
