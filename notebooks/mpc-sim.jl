@@ -127,7 +127,7 @@ begin
 	hs = sort(MPC_data[:, 2])
 	n = length(hs)
 	qs = (1:n) ./ (n+1)
-	available_colors = [:red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream]
+	available_colors = [:red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream, :red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream, :red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream, :red, :blue, :yellow, :green, :purple, :orange, :pink, :brown, :gray, :black, :burlywood, :chartreuse, :coral, :cyan, :mistyrose1, :grey, :lightyellow3, :darkolivegreen, :paleturquoise1, :thistle, :darkgray, :darkorange, :ivory, :khaki, :lawngreen, :lightsalmon, :linen, :magenta, :mediumaquamarine, :mintcream]
 end
 
 # ╔═╡ 07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
@@ -143,20 +143,21 @@ let go
 	| min h value      | $(@bind hmin Slider(hs, default=hs[1], show_value=true)) |
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
-	| cap 			   | $(@bind cap  Slider(1500:1:18000, default=18000, show_value=true)) |
+	| xcap 			   | $(@bind xcap  Slider(0.0:0.001:0.1, default=0, show_value=true)) |
+	| cap 			   | $(@bind cap  Slider(500:1:18000, default=18000, show_value=true)) |
 	| all points       | $(@bind all_points CheckBox(default=false)) |
 	"""
 end
 
 # ╔═╡ 6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
 let
-	files = 1:30
+	files = 1:100
 	combined_matrix_ref = []
 	combined_matrix_y = []
-	JOB_ID = 43775543
-	JOB_ID_2 = 43253817
+	JOB_ID = 44181059
+	JOB_ID_2 = 44181668
 	for file_num in files
-		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID-$file_num.csv", ',')
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID/$JOB_ID-$file_num.csv", ',')
 		num_rows = size(full_matrix_ref, 1)
 		file_index = fill(file_num, num_rows)
 		matrix_ref = hcat(full_matrix_ref, file_index)
@@ -164,7 +165,7 @@ let
 			combined_matrix_ref = matrix_ref
 		end
 		combined_matrix_ref = vcat(combined_matrix_ref, matrix_ref)
-		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2-$file_num.csv", ',')
+		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2/$JOB_ID_2-$file_num.csv", ',')
 		num_rows = size(full_matrix_y, 1)
 		file_index = fill(file_num, num_rows)
 		matrix_y = hcat(full_matrix_y, file_index)
@@ -201,14 +202,14 @@ let
 	hover_text_ref = map(q_ref, x_ref, y_ref, color_index_ref) do q, p, h, dev
 		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 	end
-	plot_ref = scatter(x_ref, y_ref, markercolor=colors_ref, legend=false, xlabel="time", ylabel="deviation", title="ref", hover=hover_text_ref)
-	plot!(x_ref, y_ref, label="Pareto-Front ref")
+	plot_ref = scatter(x_ref, y_ref, ylim=(0, cap), markercolor=colors_ref, legend=false, xlabel="time", ylabel="deviation", title="ref", hover=hover_text_ref)
+	plot!(x_ref, y_ref, ylim=(0, cap),label="Pareto-Front ref")
 	if all_points
 		all_color_index_ref = map(Int, sorted_matrix_ref[:, 6])
 		all_hover_text_ref = map(sorted_matrix_ref[:, 1], sorted_matrix_ref[:, 2], sorted_matrix_ref[:, 4], all_color_index_ref) do q, p, h, dev
 			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 		end
-		scatter!(sorted_matrix_ref[:, 2], sorted_matrix_ref[:, 4],  markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_ref)
+		scatter!(sorted_matrix_ref[:, 2], sorted_matrix_ref[:, 4], ylim=(0, cap), markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_ref)
 	end
 	x_y = y[:, 2]
 	q_y = y[:, 1]
@@ -218,27 +219,29 @@ let
 	hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
 		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 	end
-	plot_y = scatter(x_y, y_y, markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
-	plot!(x_y, y_y, label="Pareto-Front y")
+	plot_y = scatter(x_y, y_y,  ylim=(0, cap), markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
+	plot!(x_y, y_y, ylim=(0, cap), label="Pareto-Front y")
 	if all_points
 		all_color_index_y = map(Int, sorted_matrix_y[:, 6])
 		all_hover_text_y = map(sorted_matrix_y[:, 1], sorted_matrix_y[:, 2], sorted_matrix_y[:, 4], all_color_index_y) do q, p, h, dev
 			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 		end
-		scatter!(sorted_matrix_y[:, 2], sorted_matrix_y[:, 4],  markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_y)
+		scatter!(sorted_matrix_y[:, 2], sorted_matrix_y[:, 4],  ylim=(0, cap), markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_y)
 	end
 	plots = plot(plot_ref, plot_y, plot_title="Pareto Front for all MPC flags")
 end
 
 # ╔═╡ 2e99fe56-345c-4d2a-94ca-941fe663b924
+# ╠═╡ disabled = true
+#=╠═╡
 let
 	files = 1:30
 	combined_matrix_ref = []
 	combined_matrix_y = []
-	JOB_ID = 43775543
-	JOB_ID_2 = 43253817
+	JOB_ID = 44181059
+	JOB_ID_2 = 44181668
 	for file_num in files
-		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID-$file_num.csv", ',')
+		full_matrix_ref = readdlm("../data-proxy/mpc-flags-uniform-period/ref/$JOB_ID/$JOB_ID-$file_num.csv", ',')
 		if size(combined_matrix_ref, 1) == 0 || size(combined_matrix_ref, 2) == 0
 			num_rows = size(full_matrix_ref, 1)
 			file_index = fill(file_num, num_rows)
@@ -249,7 +252,7 @@ let
 				combined_matrix_ref[i, :] = [full_matrix_ref[i, :]; file_num]
 			end
 		end
-		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2-$file_num.csv", ',')
+		full_matrix_y = readdlm("../data-proxy/mpc-flags-uniform-period/y/$JOB_ID_2/$JOB_ID_2-$file_num.csv", ',')
 		if size(combined_matrix_y, 1) == 0 || size(combined_matrix_y, 2) == 0
 			num_rows = size(full_matrix_y, 1)
 			file_index = fill(file_num, num_rows)
@@ -280,8 +283,11 @@ let
 	plot_y = scatter(x_y, y_y, markercolor=colors_y, legend=false, xlabel="quantile", ylabel="deviation", title="y", hover=hover_text_y)
 	plots = plot(plot_ref, plot_y, plot_title="Pareto Front for all MPC flags")
 end
+  ╠═╡ =#
 
 # ╔═╡ b75abdc8-f875-48b5-9497-cf67b6c305fe
+# ╠═╡ disabled = true
+#=╠═╡
 let
 	files = 1:10
 	len = length(files)
@@ -335,14 +341,15 @@ let
 	end
 	plots_list
 end
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═e37c5e34-0191-11ef-0c30-379698507b64
 # ╠═39bbf368-4d9b-447a-be29-a0b74f391cf3
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
 # ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
-# ╠═b18059b1-4eb3-486c-ad09-11cf386fff20
-# ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
-# ╟─6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
-# ╟─2e99fe56-345c-4d2a-94ca-941fe663b924
-# ╟─b75abdc8-f875-48b5-9497-cf67b6c305fe
+# ╟─b18059b1-4eb3-486c-ad09-11cf386fff20
+# ╠═07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
+# ╠═6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
+# ╠═2e99fe56-345c-4d2a-94ca-941fe663b924
+# ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
