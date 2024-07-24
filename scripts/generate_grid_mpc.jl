@@ -34,7 +34,7 @@ const H = 1000 * 0.1
 # Chosen quantiles
 const I_VALUES = 0.01:0.01:1.0
 
-# Utilization y_values
+# Utilization values
 const U_VALUES = 0.01:0.01:1.0
 
 const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
