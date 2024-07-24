@@ -3,7 +3,7 @@
 #SBATCH --job-name=pwcet-safety-array
 #SBATCH --partition=general
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=8g
 #SBATCH --time=0-12:00:00
 #SBATCH --mail-type=all                         # send email on job start, end and fault
@@ -27,7 +27,8 @@ SECONDS=0
 # (set -x; COMPARE_MODE=ref julia --project --threads=1 generate_data_mpc.jl)
 # (set -x; COMPARE_MODE=y julia --project --threads=1 generate_data_mpc.jl)
 
-(set -x; COMPARE_MODE=y julia --project --threads=1 generate_grid_mpc.jl)
+# (set -x; COMPARE_MODE=y julia --project --threads=1 generate_grid_mpc.jl)
+(set -x; julia --project --threads=16 generate_grid.jl)
 
 echo "End running Julia: " $(date)
 echo "Elapsed time: $SECONDS"
