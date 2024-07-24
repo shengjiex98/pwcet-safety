@@ -21,6 +21,9 @@ using ContinuousSims: nominal_trajectory
 @info "Setting parameters"
 flush(stderr)
 
+const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
+const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
+
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
 const BATCHSIZE = 30_000
@@ -37,19 +40,11 @@ const I_VALUES = 0.01:0.01:1.0
 # Utilization values
 const U_VALUES = 0.01:0.01:1.0
 
-const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
-const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 const COMPARE_MODE = ENV["COMPARE_MODE"]
-
-if COMPARE_MODE ∉ ["y", "ref"]
-    throw(ArgumentError("COMPARE_MODE must be either 'y' or 'ref'"))
-end
+@assert COMPARE_MODE ∈ ["y", "ref"] "COMPARE_MODE must be either 'y' or 'ref'"
 
 const UTIL = TASK_ID/100
-if UTIL ∉ U_VALUES
-    println("TASK_ID exceeds utilization range. Exiting.")
-    exit()
-end
+@assert UTIL ∈ U_VALUES "TASK_ID exceeds utilization range. Exiting."
 
 # Timing file PATH
 const TIMING_FILE = "$(@__DIR__)/../data/output-O2-samer/output-O2-samer-1.json"
