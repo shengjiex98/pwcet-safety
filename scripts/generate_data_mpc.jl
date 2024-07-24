@@ -39,6 +39,11 @@ const FILE_NUM = 1:100
 
 const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
 const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
+const COMPARE_MODE = ENV["COMPARE_MODE"]
+
+if COMPARE_MODE ∉ ["y", "ref"]
+    throw(ArgumentError("COMPARE_MODE must be either 'y' or 'ref'"))
+end
 
 # >>> Enable one of the two blocks >>>
 # if TASK_ID > length(I_VALUES)
@@ -129,6 +134,7 @@ for i in I_VALUES
     @info "Threads count:" Threads.nthreads()
     @info "System dynamics:" SYS sysd
     @info "Parameters:" BATCHSIZE q period H H_steps
+    @info "MPC compare mode:" COMPARE_MODE
     flush(stderr)
 
     filename = generate_filename(BATCHSIZE, q, period)
@@ -137,7 +143,11 @@ for i in I_VALUES
         # exit()
         continue
     end
-    t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=ref_values)
+    if COMPARE_MODE == "y"
+        t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=y_values)
+    elseif COMPARE_MODE == "ref"
+        t = @elapsed data = generate_samples_mpc(sysd, x0, ref_values, q, BATCHSIZE, H=H_steps, compare=ref_values)
+    end
     @info t
     serialize("$SAVE_PATH/$filename.jls", data)
     @info "Saved at $SAVE_PATH/$filename.jls"
