@@ -10,17 +10,17 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 44181059
-const file_num = 1:100
+const JOB_ID = 44669211
+const FILE_NUM = 1:100
 
 const P = 0.99
 
-for i in file_num
+for i in FILE_NUM
     # PATH = "$(@__DIR__)/../data/mpc/$JOB_ID/$i"
-    PATH = "$(@__DIR__)/../data/mpc-uniform-period/$JOB_ID/$i"
+    PATH = "$(@__DIR__)/../data/mpc-grid/$JOB_ID/$i"
+    OUTPUT_PATH = "$(@__DIR__)/../data-proxy/mpc-grid/y/"
+    mkpath(OUTPUT_PATH)
     OUTPUT_FILE = "$JOB_ID-$i"
-
-    OUTPUT_PATH = "$(@__DIR__)/../data-proxy/mpc-flags-uniform-period/ref/"
 
     function parsefile(filename::String)
         b_s, q_s, h_s = split(filename, "-")[1:3]
