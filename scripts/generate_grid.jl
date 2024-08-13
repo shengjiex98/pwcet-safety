@@ -1,18 +1,24 @@
 @info "Importing packages"
 flush(stderr)
 
+using JSON
 using Serialization
 using Printf
 using ControlSystemsBase
 using ControlTimingSafety
 using LinearAlgebra: I
-using Distributions: Pareto, Normal, cdf, quantile
+import Distributions: Pareto, Normal, cdf, quantile
+using Statistics
 using Printf
 
 push!(LOAD_PATH, "$(@__DIR__)/../src")
 using Experiments
 using Benchmarks
 using ContinuousSims: nominal_trajectory
+
+function cdf(dist::Vector{<:Real}, value::Real)
+    return (dist .<= value) .|> Int64 |> mean
+end
 
 @info "Setting parameters"
 flush(stderr)
@@ -31,8 +37,19 @@ const K = lqr(SYS, I, I)
 # Time horizon
 const H = 100 * 0.02
 
+# Timing file PATH
+@info "Reading timing file"
+flush(stderr)
+const TIMING_FILE = "$(@__DIR__)/slre.json"
+const DATA = open(TIMING_FILE) do file
+    JSON.parse(file)
+end
+const E_VALUES = sort(DATA["t"]) / mean(DATA["t"]) * 0.02
+
+const DIST = E_VALUES
+
 # Execution time distribution
-const DIST = Pareto(1.5, 0.01)
+# const DIST = Pareto(1.5, 0.01)
 # DIST = Normal(0.03, 0.005)
 const P_MIN = quantile(DIST, 0.01)
 const P_MAX = quantile(DIST, 0.99)
@@ -47,8 +64,11 @@ const IDX = TASK_ID/100
 @assert IDX ∈ I_VALUES "TASK_ID exceeds index range.."
 const PERIOD = P_MIN + (P_MAX - P_MIN) * IDX
 
-PATH = "$(@__DIR__)/../data/nmc-grid/$JOB_ID-$DIST/$PERIOD/"
+const PATH = "$(@__DIR__)/../data/nmc-grid/$JOB_ID/$TASK_ID/"
 mkpath(PATH)
+open("$PATH/_execution_distribution.txt", "w") do file
+    write(file, "$TIMING_FILE")
+end
 # <<< Experiment parameters <<<
 
 function get_q_from_period(period::Real; util::Real=1)

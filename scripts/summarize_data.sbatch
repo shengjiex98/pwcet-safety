@@ -8,6 +8,7 @@
 #SBATCH --time=0-2:00:00
 #SBATCH --mail-type=all                         # send email on job start, end and fault
 #SBATCH --mail-user=sxunique@cs.unc.edu
+#SBATCH --dependency=afterok:46080931
 
 echo "SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID."
 echo "Executing on the machine:" $(hostname)

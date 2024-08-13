@@ -10,15 +10,15 @@ using Experiments
 # const PATH = "../data/nmc-dist/$SYS/$DIST"
 # const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-const JOB_ID = 44669211
+const JOB_ID = 46080931
 const FILE_NUM = 1:100
 
 const P = 0.99
 
 for i in FILE_NUM
     # PATH = "$(@__DIR__)/../data/mpc/$JOB_ID/$i"
-    PATH = "$(@__DIR__)/../data/mpc-grid/$JOB_ID/$i"
-    OUTPUT_PATH = "$(@__DIR__)/../data-proxy/mpc-grid/y/"
+    PATH = "$(@__DIR__)/../data/nmc-grid/$JOB_ID/$i"
+    OUTPUT_PATH = "$(@__DIR__)/../data-proxy/nmc-grid/$JOB_ID/"
     mkpath(OUTPUT_PATH)
     OUTPUT_FILE = "$JOB_ID-$i"
 
@@ -33,8 +33,8 @@ for i in FILE_NUM
     @info "Reading files in $PATH..."
     flush(stderr)
 
-    FILES = readdir(PATH)
-    BATCHSIZE =parsefile(FILES[1])[1]
+    FILES = filter(x -> endswith(x, ".jls"), readdir(PATH))
+    BATCHSIZE = parsefile(FILES[1])[1]
 
     @info "$(length(FILES)) files found. Batch size is $BATCHSIZE"
     flush(stderr)
