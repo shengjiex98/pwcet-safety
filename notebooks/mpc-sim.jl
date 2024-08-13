@@ -144,7 +144,7 @@ let go
 	| max h value      | $(@bind hmax Slider(hs, default=hs[end], show_value=true)) |
 	| surface          | $(@bind surf CheckBox(default=false)) |
 	| low_cap 			   | $(@bind low_cap  Slider(500:1:3000, default=1050, show_value=true)) |
-	| cap 			   | $(@bind cap  Slider(1000:1:18000, default=1100, show_value=true)) |
+	| cap 			   | $(@bind cap  Slider(1000:1:18000, default=5000, show_value=true)) |
 	| all points       | $(@bind all_points CheckBox(default=false)) |
 	"""
 end
@@ -176,6 +176,50 @@ let
 		x += 1
 	end
 	plots_list
+end
+
+# ╔═╡ 64fe734f-db91-4324-9200-c321cab08915
+let
+	files = 1:100
+	len = length(files)
+	matrix_y = []
+	for file_num in files
+		JOB_ID = 44669211
+		y = readdlm("../data-proxy/mpc-grid/y/$JOB_ID-$file_num.csv", ',')
+		num_rows = size(y, 1)
+		file_index = fill(file_num, num_rows)
+		y = hcat(y, file_index)
+		if size(matrix_y, 1) == 0 || size(matrix_y, 2) == 0
+			matrix_y = y
+		end
+		min_dev = Inf
+		x = Inf
+		for i in 1:size(y, 1)
+			if (y[i, :][1] != 0) & (y[i, :][1] != 1.0e-5)
+				if y[i, :][4] < min_dev
+					min_dev = y[i, :][4]
+					x = i
+				end
+			end
+		end
+		if(x != Inf)
+			matrix_y = vcat(matrix_y, reshape(y[x, :], 1, :))
+		end
+	end
+	matrix_y = matrix_y[101:end, :]
+	sorted_indices = sortperm(matrix_y[:, 2])
+	matrix_y = matrix_y[sorted_indices, :]
+	print(matrix_y)
+	x_y = matrix_y[:, 2]
+	q_y = matrix_y[:, 1]
+	y_y = matrix_y[:, 4]
+	color_index_y = map(Int, matrix_y[:, 6])
+	colors_y = [available_colors[i] for i in color_index_y]
+	hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
+		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+	end
+	plot_y = scatter(x_y, y_y, ylim=(0, cap),markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
+	plot!(x_y, y_y, ylim=(0, cap),label="Pareto-Front y")
 end
 
 # ╔═╡ 6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
@@ -378,8 +422,9 @@ end
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
 # ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╟─b18059b1-4eb3-486c-ad09-11cf386fff20
-# ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
+# ╠═07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
 # ╠═a2a8f41a-9357-448b-a2a6-c1f68c2e2621
+# ╠═64fe734f-db91-4324-9200-c321cab08915
 # ╠═6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
 # ╠═2e99fe56-345c-4d2a-94ca-941fe663b924
 # ╠═b75abdc8-f875-48b5-9497-cf67b6c305fe
