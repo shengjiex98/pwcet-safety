@@ -158,8 +158,8 @@ let
 	x = 1
 	for file_num in files
 		color = color_names[x]
-		JOB_ID = 44669211
-		y = readdlm("../data-proxy/mpc-grid/y/$JOB_ID-$file_num.csv", ',')
+		JOB_ID = 46080931
+		y = readdlm("../data-proxy/nmc-grid/$JOB_ID/$JOB_ID-$file_num.csv", ',')
 		x_y = y[:, 2]
 		q_y = y[:, 1]
 		y_y = y[:, 4]
@@ -169,7 +169,7 @@ let
 		hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
 			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
 		end
-		plot_y = scatter(x_y, y_y, ylim=(low_cap, cap), markercolor=color, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
+		plot_y = scatter(x_y, y_y, markercolor=color, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
 		plot!(x_y, y_y, label="Pareto-Front y")
 		plots = plot(plot_y, plot_title="MPC_$file_num")
 		push!(plots_list, plots)
@@ -183,6 +183,7 @@ let
 	files = 1:100
 	len = length(files)
 	matrix_y = []
+	all_points_y = []
 	for file_num in files
 		JOB_ID = 44669211
 		y = readdlm("../data-proxy/mpc-grid/y/$JOB_ID-$file_num.csv", ',')
@@ -191,6 +192,7 @@ let
 		y = hcat(y, file_index)
 		if size(matrix_y, 1) == 0 || size(matrix_y, 2) == 0
 			matrix_y = y
+			all_points_y = y
 		end
 		min_dev = Inf
 		x = Inf
@@ -200,25 +202,35 @@ let
 					min_dev = y[i, :][4]
 					x = i
 				end
+				all_points_y = vcat(all_points_y, reshape(y[i, :], 1, :))
 			end
 		end
 		if(x != Inf)
 			matrix_y = vcat(matrix_y, reshape(y[x, :], 1, :))
 		end
 	end
+	all_points_y = all_points_y[101:end, :]
 	matrix_y = matrix_y[101:end, :]
-	sorted_indices = sortperm(matrix_y[:, 2])
+	sorted_indices = sortperm(matrix_y[:, 6])
 	matrix_y = matrix_y[sorted_indices, :]
-	x_y = matrix_y[:, 2]
+	x_y = matrix_y[:, 6]
 	q_y = matrix_y[:, 1]
 	y_y = matrix_y[:, 4]
 	color_index_y = map(Int, matrix_y[:, 6])
 	colors_y = [available_colors[i] for i in color_index_y]
 	hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
-		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		@sprintf "q=%.3f period=%.5f dev=%.3f utilization=%.3f" q p h dev
 	end
 	plot_y = scatter(x_y, y_y, ylim=(0, cap),markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
 	plot!(x_y, y_y, ylim=(0, cap),label="Pareto-Front y")
+	if all_points
+		all_color_index_y = map(Int, all_points_y[:, 6])
+		all_hover_text_y = map(all_points_y[:, 1], all_points_y[:, 2], all_points_y[:, 4], all_color_index_y) do q, p, h, dev
+			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		end
+		scatter!(all_points_y[:, 6], all_points_y[:, 4],  ylim=(0, cap), markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_y)
+	end
+	plot_y
 end
 
 # ╔═╡ a4f3c000-acd8-4fa9-bf05-85eaf165a783
@@ -226,6 +238,7 @@ let
 	files = 1:100
 	len = length(files)
 	matrix_y = []
+	all_points_y = []
 	for file_num in files
 		JOB_ID = 46080931
 		y = readdlm("../data-proxy/nmc-grid/$JOB_ID/$JOB_ID-$file_num.csv", ',')
@@ -234,6 +247,7 @@ let
 		y = hcat(y, file_index)
 		if size(matrix_y, 1) == 0 || size(matrix_y, 2) == 0
 			matrix_y = y
+			all_points_y = y
 		end
 		min_dev = Inf
 		x = Inf
@@ -243,25 +257,35 @@ let
 					min_dev = y[i, :][4]
 					x = i
 				end
+				all_points_y = vcat(all_points_y, reshape(y[i, :], 1, :))
 			end
 		end
 		if(x != Inf)
 			matrix_y = vcat(matrix_y, reshape(y[x, :], 1, :))
 		end
 	end
+	all_points_y = all_points_y[6:end, :]
 	matrix_y = matrix_y[6:end, :]
 	sorted_indices = sortperm(matrix_y[:, 2])
 	matrix_y = matrix_y[sorted_indices, :]
-	x_y = matrix_y[:, 2]
+	x_y = matrix_y[:, 6]
 	q_y = matrix_y[:, 1]
 	y_y = matrix_y[:, 4]
 	color_index_y = map(Int, matrix_y[:, 6])
 	colors_y = [available_colors[i] for i in color_index_y]
 	hover_text_y = map(q_y, x_y, y_y, color_index_y) do q, p, h, dev
-		@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		@sprintf "q=%.3f period=%.5f dev=%.3f uitilization=%.3f" q p h dev
 	end
 	plot_y = scatter(x_y, y_y,markercolor=colors_y, legend=false, xlabel="time", ylabel="deviation", title="y", hover=hover_text_y)
 	plot!(x_y, y_y,label="Pareto-Front y")
+	if all_points
+		all_color_index_y = map(Int, all_points_y[:, 6])
+		all_hover_text_y = map(all_points_y[:, 1], all_points_y[:, 2], all_points_y[:, 4], all_color_index_y) do q, p, h, dev
+			@sprintf "q=%.3f period=%.5f dev=%.3f flag=%.3f" q p h dev
+		end
+		scatter!(all_points_y[:, 6], all_points_y[:, 4],  ylim=(0, cap), markercolor=:white, alpha=0.1,  legend=false, hover=all_hover_text_y)
+	end
+	plot_y
 end
 
 # ╔═╡ 6c11abb1-46b0-4f9d-8677-75fcbf9d3d8f
@@ -464,7 +488,7 @@ end
 # ╠═566cc4d1-e984-44e4-ab06-4d05d903335a
 # ╟─07e901e0-5a41-4b02-8bd7-c50e67022b70
 # ╟─b18059b1-4eb3-486c-ad09-11cf386fff20
-# ╠═07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
+# ╟─07df95d3-8763-47bd-a6a4-3b5a42e3ccb4
 # ╠═a2a8f41a-9357-448b-a2a6-c1f68c2e2621
 # ╠═64fe734f-db91-4324-9200-c321cab08915
 # ╠═a4f3c000-acd8-4fa9-bf05-85eaf165a783
