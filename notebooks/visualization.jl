@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.40
+# v0.19.46
 
 using Markdown
 using InteractiveUtils
@@ -78,7 +78,7 @@ function plot_results(
 	end
 	
 	# Set common properties
-	plt = plot(title=title, legend=:topleft, proj_type=:ortho)
+	plt = plot(title=title, proj_type=:ortho)
 
 	hovertext=map(q_values, h_values, quantiles) do q, h, dev
 		@sprintf "q=%.3f h=%.3f dev=%.3f" q h dev
@@ -89,21 +89,26 @@ function plot_results(
 		scatter!(q_values, quantiles,
 			# xlim=(qmin, qmax), 
 			# ylim=(0, maximum(quantiles)),
-			xlabel="quantile", ylabel="deviation", color=color,
-			hover=hovertext
+			xlabel="Quantile", ylabel="Deviation", color=color,
+			hover=hovertext,
+			label=nothing
 		)
 		if !isnothing(confidence)
 			plot!(q_values, quantiles,
-				ribbon=(confidence[:,1], confidence[:,2]))
+				ribbon=(confidence[:,1], confidence[:,2]),
+				label=nothing)
 		end
 	elseif mode == "period"
 		scatter!(h_values, quantiles,
 			# xlim=(hmin, hmax), 
 			# ylim=(0, maximum(quantiles)),
-			xlabel="period", ylabel="deviation", color=color)
+			xlabel="Period (s)", ylabel="Deviation", color=color,
+			label=nothing
+		)
 		if !isnothing(confidence)
 			plot!(h_values, quantiles,
-				ribbon=(confidence[:,1], confidence[:,2]))
+				ribbon=(confidence[:,1], confidence[:,2]),
+				label="95% Confidence Interval")
 		end
 	elseif mode == "free"
 	    if draw_surface
@@ -113,7 +118,7 @@ function plot_results(
 			markersize=2.5,
 			# xlim=(qmin, qmax), ylim=(hmin, hmax), 
 			# zlim=(0, maximum(quantiles)),
-			xlabel="quantile", ylabel="period", zlabel="deviation",
+			xlabel="Quantile", ylabel="Period (s)", zlabel="Deviation",
 			color=color)
 			plot!(camera=(az, el))
 	else
@@ -174,11 +179,12 @@ let go
 end
 
 # ╔═╡ d12e5d80-7099-4564-8144-778c812b106c
-let
-	SYS = "CC2"
+plt = let
+	SYS = "F1T"
 	# Hack to remove the prefix "Distributions." from distribution name
 	DISTNAME = join(split("$dist", ".")[2:end], ".")
 	full_matrix = readdlm("../data-proxy/nmc-dist-$SYS-$DISTNAME.csv", ',')
+	@info full_matrix
 	colors = let
 		res = fill(:lightblue, size(full_matrix, 1))
 		mindev = cap
@@ -196,9 +202,15 @@ let
 		dev <= cap
 	plot_results(full_matrix[:,1], full_matrix[:,2], full_matrix[:,4],
 		confidence=[full_matrix[:,4]-full_matrix[:,3] full_matrix[:,5]-full_matrix[:,4]],
-		filter_fn=filter_fn, title="CC2", draw_surface=surf,
-		mode=mode, az=az, el=el, color=colors)
+		filter_fn=filter_fn, 
+		# title="Deviation vs. Period for the F1/10 model", 
+		draw_surface=surf,
+		mode=mode, az=az, el=el)
+		# mode=mode, az=az, el=el, color=colors)
 end
+
+# ╔═╡ 5a426b8d-e062-43b2-81ef-77f8245292ee
+savefig(plt, "fig1.pdf")
 
 # ╔═╡ ae494460-6f76-4562-a6b4-42f0bc6df262
 let
@@ -310,6 +322,7 @@ end
 # ╟─dde0af91-d0ff-4e4d-a4d4-f8fb770987dd
 # ╟─d4549398-3ca3-44ba-b016-ca55bf4056cf
 # ╠═d12e5d80-7099-4564-8144-778c812b106c
+# ╠═5a426b8d-e062-43b2-81ef-77f8245292ee
 # ╠═ae494460-6f76-4562-a6b4-42f0bc6df262
 # ╟─2e3b2b76-c100-4f6d-b5a6-8263da6ca724
 # ╠═730899e1-edd5-4ddc-be98-b193a22bb6f8
