@@ -1,0 +1,2 @@
+system description, distribution, deadline hit chance, period, utilization, p99 of deviation, p99 lower, p99 upper
+"f1-lqr/mpc-ref/mpc-y", "uniform(a, b)/pareto(1.5, 0.03)/mpc-measurement-flag-x/embench-slre", q, p, p99, p99_lower, p99_upper
