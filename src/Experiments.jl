@@ -3,7 +3,7 @@ module Experiments
 export SamplerPWCET
 export single_run_deviation, generate_samples, generate_filename, generate_samples_mpc, generate_samples_mpc_with_multi_ref
 export binomial_prob, lr_test, lr_test_2
-export find_intervals
+export find_intervals, summarize_data
 
 import Random
 using Distributions
@@ -127,6 +127,20 @@ function lr_test_2(θ::Real, n::Integer, ϵ::Real)
     observed = x / n
     θ0 = [θ - ϵ, θ + ϵ]
     maximum(@. (θ0 / observed)^x * ((1 - θ0) / (1 - observed))^(n - x))
+end
+
+"""
+    summarize_data(data, p, α)
+
+Calculates the p-th quantile of the deviations from generated samples, with the
+given confidence interval expressed by 1-α.
+"""
+function summarize_data(data::Vector{Tuple{BitVector,Float64}}; p::Real, α::Real)
+    n = length(data)
+    i99 = round(Int64, n * p)
+    i_lower, i_upper = find_intervals(n, p, α, centered=true)[1]
+
+    [data[i][2] for i in [i99, i_lower, i_upper]]
 end
 
 """
