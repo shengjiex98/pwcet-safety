@@ -6,4 +6,3 @@ slurm*.out
 slurm*.err
 data/
 *.jls
-*.json
