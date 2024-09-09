@@ -4,3 +4,6 @@ __pycache__
 .vscode
 slurm*.out
 slurm*.err
+data/
+*.jls
+*.json

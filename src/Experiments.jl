@@ -1,8 +1,7 @@
-
 module Experiments
 
 export SamplerPWCET
-export single_run_deviation, generate_samples, generate_filename, generate_samples_mpc
+export single_run_deviation, generate_samples, generate_filename, generate_samples_mpc, generate_samples_mpc_with_multi_ref
 export binomial_prob, lr_test, lr_test_2
 export find_intervals
 
@@ -70,13 +69,22 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     end
 end
 
-function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete}, z0::AbstractVector{<:Real}, refs::AbstractVector{<:Real}, q::Real, n::Integer;
-    H::Integer=100, sorted=true)
+function generate_samples_mpc(
+        sysd::AbstractStateSpace{<:ControlSystemsBase.Discrete},
+        x0::AbstractVector{<:Real}, 
+        refs::AbstractVector{<:Real}, 
+        q::Real, 
+        n::Integer;
+        H::Integer=100, 
+        sorted=true, 
+        compare::AbstractVector{<:Real}=refs)
+    length(refs) == length(compare) == H || throw(ArgumentError("refs and compare must have H elements."))
+
     sp = SamplerPWCET(q, H)
     samples = Vector{Tuple{BitVector,Float64}}(undef, n)
-    Threads.@threads for i in 1:n
+    for i in 1:n
         σ = rand(sp)
-        d = maximum(abs.(run_simulation(sysd, z0, refs) - refs))
+        d = maximum(abs.(run_simulation(sysd, x0, refs; input = σ) - compare))
         samples[i] = (σ, d)
     end
     if sorted
@@ -87,11 +95,11 @@ function generate_samples_mpc(sysd::AbstractStateSpace{<:ControlSystemsBase.Disc
 end
 
 function generate_filename(batchsize::Integer, q::Real, h::Real, n::Integer; th::Integer=Threads.nthreads())
-    @sprintf "b%.1e-q%.9g-h%.9g-n%i-th%i" batchsize q h n th
+    @sprintf "b%.1e-q%.6f-h%.9g-n%i-th%i" batchsize q h n th
 end
 
 function generate_filename(batchsize::Integer, q::Real, h::Real; th::Integer=Threads.nthreads())
-    @sprintf "b%.1e-q%.9g-h%.9g-th%i" batchsize q h th
+    @sprintf "b%.1e-q%.6f-h%.9g-th%i" batchsize q h th
 end
 
 """

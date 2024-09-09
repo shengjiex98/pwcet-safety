@@ -15,17 +15,17 @@ TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
-BATCHSIZE = 1_000_000
+BATCHSIZE = 100_000
 
 DIST = Pareto(1.5, 0.001)
 # DIST = Normal(0.03, 0.005)
 
 # Time horizon
-H = 100 * 0.02
+H = 100 * 0.002
 # Values of quantiles
 Q_VALUES = 0.01:0.01:0.99
 SYS = :EWB
-PATH = "../data/nmc-dist/$(String(SYS))/$DIST/"
+PATH = "../data/nmc-dist/$SYS/$DIST/"
 # <<< Experiment parameters <<<
 
 mkpath(PATH)

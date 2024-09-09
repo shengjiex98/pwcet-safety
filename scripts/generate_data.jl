@@ -5,7 +5,7 @@ using ControlTimingSafety
 using LinearAlgebra: I
 using Distributions: Pareto, Normal, cdf, quantile
 
-push!(LOAD_PATH, "../src")
+push!(LOAD_PATH, "$(@__DIR__)/../src")
 using Experiments
 using Benchmarks
 using ContinuousSims: nominal_trajectory
@@ -24,7 +24,7 @@ DIST = Pareto(1.5, 0.03)
 H = 100 * 0.02
 # Values of quantiles
 Q_VALUES = 0.01:0.01:0.99
-PATH = "../data/nmc-dist/$JOB_ID-$DIST/"
+PATH = "$(@__DIR__)/../data/nmc-dist/$JOB_ID-$DIST/"
 # <<< Experiment parameters <<<
 
 mkpath(PATH)

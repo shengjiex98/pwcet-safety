@@ -2,41 +2,59 @@ using Serialization
 using Distributions: Pareto, quantile
 using DelimitedFiles
 
-push!(LOAD_PATH, "../src")
+push!(LOAD_PATH, "$(@__DIR__)/../src")
 using Experiments
 
-SYS = "CC2"
-DIST = Pareto(1.5, 0.03)
-PATH = "../data/nmc-dist/$SYS/$DIST"
-OUTPUT_PATH = "../data-proxy"
-OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
+# const SYS = "EWB"
+# const DIST = Pareto(1.5, 0.001)
+# const PATH = "../data/nmc-dist/$SYS/$DIST"
+# const OUTPUT_FILE = "nmc-dist-$SYS-$DIST"
 
-BATCHSIZE = 1_000_000
-H = 100 * 0.02
-Q_VALUES = 0.01:0.01:0.99
+const JOB_ID = 46080931
+const FILE_NUM = 1:100
 
-p = 0.99
-i99 = round(Int64, BATCHSIZE * p)
-i_low, i_high = find_intervals(BATCHSIZE, p, 0.05, centered=true)[1]
+const P = 0.99
 
-function get_quantile(q, h)
-    filename = generate_filename(BATCHSIZE, q, h, th=16)
-    if !isfile("$PATH/$filename.jls")
-        @info "Parameters without valid data" BATCHSIZE q h
-        return [Inf, Inf, Inf]
+for i in FILE_NUM
+    # PATH = "$(@__DIR__)/../data/mpc/$JOB_ID/$i"
+    PATH = "$(@__DIR__)/../data/nmc-grid/$JOB_ID/$i"
+    OUTPUT_PATH = "$(@__DIR__)/../data-proxy/nmc-grid/$JOB_ID/"
+    mkpath(OUTPUT_PATH)
+    OUTPUT_FILE = "$JOB_ID-$i"
+
+    function parsefile(filename::String)
+        b_s, q_s, h_s = split(filename, "-")[1:3]
+        b = Int64(parse(Float64, b_s[2:end]))
+        q = parse(Float64, q_s[2:end])
+        h = parse(Float64, h_s[2:end])
+        return b, q, h
     end
-    data = deserialize("$PATH/$filename.jls")
-    [data[i][2] for i in (i_low, i99, i_high)]
+
+    @info "Reading files in $PATH..."
+    flush(stderr)
+
+    FILES = filter(x -> endswith(x, ".jls"), readdir(PATH))
+    BATCHSIZE = parsefile(FILES[1])[1]
+
+    @info "$(length(FILES)) files found. Batch size is $BATCHSIZE"
+    flush(stderr)
+
+    I99 = round(Int64, BATCHSIZE * P)
+    I_LOW, I_HIGH = find_intervals(BATCHSIZE, P, 0.05, centered=true)[1]
+
+    proxy = map(FILES) do filename
+        b, q, h = parsefile(filename)
+        data = deserialize("$PATH/$filename")
+        vcat([q, h], [data[i][2] for i in [I_LOW, I99, I_HIGH]])
+    end |> stack |> transpose
+
+    @info size(proxy)
+    flush(stderr)
+    # @info proxy
+
+    @info "Writing results to files..."
+    flush(stderr)
+    
+    serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", proxy)
+    writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", proxy, ',')
 end
-
-quantiles = map(Q_VALUES) do q
-    h = quantile(DIST, q)
-    get_quantile(q, h)
-end |> stack
-
-@info size(quantiles)
-
-serialize("$OUTPUT_PATH/$OUTPUT_FILE.jls", quantiles)
-
-full = vcat(reshape(Q_VALUES, 1, :), reshape(quantile.(DIST, Q_VALUES), 1, :), quantiles)
-writedlm("$OUTPUT_PATH/$OUTPUT_FILE.csv", full', ',')
