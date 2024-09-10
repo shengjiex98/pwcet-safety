@@ -1,6 +1,7 @@
 @info "Importing packages"
 flush(stderr)
 
+using CSV
 using JSON
 using Serialization
 using Printf
