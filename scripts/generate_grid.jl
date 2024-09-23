@@ -30,7 +30,7 @@ const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
 
 # >>> Experiment parameters >>>
 # BATCHSIZE = 100
-const BATCHSIZE = 300_000
+const BATCHSIZE = parse(Int64, ENV["BATCHSIZE"])
 
 # Continuous SYStem definition
 const SYSNAME = :F1T
@@ -122,8 +122,11 @@ for u in U_VALUES
     t = @elapsed data = generate_samples(a, z0, q, BATCHSIZE; H=H_STEPS, nominal_trajectory=z_nom)
     @info "Elapsed time:" t
     p99, p99_lower, p99_upper = summarize_data(data, p=0.99, α=0.05)
+    @info "Quantiles" p99 p99_lower p99_upper
     push!(df, (String(SYSNAME), "slre", BATCHSIZE, q, PERIOD, u, p99, p99_lower, p99_upper))
 end
+
+@info df
 
 # Save df to CSV file
 CSV.write("$PATH/$TASK_ID.csv", df)

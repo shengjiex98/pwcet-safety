@@ -28,7 +28,7 @@ SECONDS=0
 # (set -x; COMPARE_MODE=y julia --project --threads=1 generate_data_mpc.jl)
 
 # (set -x; COMPARE_MODE=y julia --project --threads=1 generate_grid_mpc.jl)
-(set -x; julia --project --threads=16 generate_grid.jl)
+(set -x; BATCHSIZE=300000 julia --project --threads=16 generate_grid.jl)
 
 echo "End running Julia: " $(date)
 echo "Elapsed time: $SECONDS"
