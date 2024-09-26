@@ -40,7 +40,8 @@ def plot(df,
 import pandas as pd
 
 def pareto_front(df, col):
-    df_sorted = df.sort_values(by=col, ascending=True)
+    df_sorted = df.loc[df.groupby(col)['p99'].idxmin()]
+    df_sorted = df_sorted.sort_values(by=col, ascending=True)
     pareto_front = []
     min_dev = float('inf')
     for index, row in df_sorted.iterrows():
