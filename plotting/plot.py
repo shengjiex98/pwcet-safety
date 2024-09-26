@@ -12,11 +12,30 @@ def plot(df,
         df = filter_fn(df)
     
     if allpoints:
+        title_text = f"{df.iloc[0, 0]} - {df.iloc[0, 1]}"
         fig = px.scatter(df, x=x_axis, y='p99', hover_data=hover_fields, color=color_by)
-        return fig
+
     else:
         df_pareto = pareto_front(df, x_axis)
+        title_text = f"{df_pareto.iloc[0, 0]} - {df_pareto.iloc[0, 1]}"
         fig = px.scatter(df_pareto, x=x_axis, y='p99', hover_data=hover_fields, color=color_by)
+
+    fig.update_layout(title=title_text, title_x=0.5)
+    fig.update_layout(plot_bgcolor='white')
+    fig.update_xaxes(
+        mirror=False,
+        ticks='outside',
+        showline=True,
+        linecolor='black',
+        gridcolor='lightgrey'
+    )
+    fig.update_yaxes(
+        mirror=False,
+        ticks='outside',
+        showline=True,
+        linecolor='black',
+        gridcolor='lightgrey'
+    )
     return fig
 import pandas as pd
 
