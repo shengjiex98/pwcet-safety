@@ -139,7 +139,7 @@ function summarize_data(data::Vector{Tuple{BitVector,Float64}}; p::Real, α::Rea
     n = length(data)
     i99 = round(Int64, n * p)
     i_lower, i_upper = find_intervals(n, p, α, centered=true)[1]
-
+    @info "interval" i_lower, i_upper
     [data[i][2] for i in [i99, i_lower, i_upper]]
 end
 
@@ -159,16 +159,19 @@ function find_intervals(n::Integer, p::Real, α::Real; centered=false, fullresul
     # Use Memoization.jl to cache calculated cdf results (saves time for large n values).
     @memoize cdf_cached(i) = cdf(dist, i)
 
+    @info "Finding interval"
     if centered
         c = round(Int64, n * p)
         prob_mass = (1 - α - pdf(dist, c)) / 2
-
+        
         i1 = i2 = c
-        while cdf_cached(i2) - cdf_cached(c) < prob_mass
+        while i2 < n && cdf_cached(i2) - cdf_cached(c) < prob_mass
             i2 += 1
+            # @info i2
         end
-        while cdf_cached(c-1) - cdf_cached(i1-1) < prob_mass
+        while i1 > 0 && cdf_cached(c-1) - cdf_cached(i1-1) < prob_mass
             i1 -= 1
+            # @info i1 c cdf_cached(c-1) cdf_cached(i1-1)
         end
         return [(i1, i2)]
     end

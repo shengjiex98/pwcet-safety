@@ -1,3 +1,5 @@
 # (set -x; SLURM_ARRAY_JOB_ID=1 SLURM_ARRAY_TASK_ID=30 COMPARE_MODE=y julia --project --threads=1 generate_data_mpc.jl)
 # (set -x; SLURM_ARRAY_JOB_ID=1 SLURM_ARRAY_TASK_ID=30 COMPARE_MODE=y julia --project --threads=1 generate_grid_mpc.jl)
-(set -x; SLURM_ARRAY_JOB_ID=1 SLURM_ARRAY_TASK_ID=30 BATCHSIZE=100 julia --project --threads=4 generate_grid.jl)
+(set -x; SLURM_ARRAY_JOB_ID=1 SLURM_ARRAY_TASK_ID=100 BATCHSIZE=1000 SYSNAME=F1T TIMING_MODE=synthetic TIMING_FILE=picojpeg-emnist.json P_MIN=0.005 P_MAX=0.04 julia --project --threads=4 generate_grid.jl)
+# (set -x; SLURM_ARRAY_JOB_ID=2 SLURM_ARRAY_TASK_ID=50 BATCHSIZE=1000 SYSNAME=CC2 TIMING_FILE=huffbench.json P_MIN=0.005 P_MAX=0.04 julia --project --threads=4 generate_grid.jl)
+# (set -x; SLURM_ARRAY_JOB_ID=3 SLURM_ARRAY_TASK_ID=50 BATCHSIZE=1000 SYSNAME=CC2 TIMING_MODE=synthetic TIMING_FILE=huffbench.json P_MIN=0.005 P_MAX=0.04 julia --project --threads=4 generate_grid.jl)

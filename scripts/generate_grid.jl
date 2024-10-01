@@ -25,37 +25,34 @@ end
 @info "Setting parameters"
 flush(stderr)
 
+# >>> Experiment parameters >>>
 const JOB_ID = parse(Int64, ENV["SLURM_ARRAY_JOB_ID"])
 const TASK_ID = parse(Int64, ENV["SLURM_ARRAY_TASK_ID"])
-
-# >>> Experiment parameters >>>
-# BATCHSIZE = 100
 const BATCHSIZE = parse(Int64, ENV["BATCHSIZE"])
+const SYSNAME = Symbol(ENV["SYSNAME"])
+const TIMING_MODE = ENV["TIMING_MODE"]
+const TIMING_FILE = ENV["TIMING_FILE"]
+const P_MIN = parse(Float64, ENV["P_MIN"])
+const P_MAX = parse(Float64, ENV["P_MAX"])
 
 # Continuous SYStem definition
-const SYSNAME = :F1T
 const SYS = benchmarks[SYSNAME]
 const K = lqr(SYS, I, I)
 
 # Time horizon
 const H = 100 * 0.02
 
-# Timing file PATH
-@info "Reading timing file"
-flush(stderr)
-const TIMING_FILE = "$(@__DIR__)/slre.json"
-const DATA = open(TIMING_FILE) do file
-    JSON.parse(file)
-end
-const E_VALUES = sort(DATA["t"]) / mean(DATA["t"]) * 0.02
-
-const DIST = E_VALUES
-
 # Execution time distribution
-# const DIST = Pareto(1.5, 0.01)
-# DIST = Normal(0.03, 0.005)
-const P_MIN = quantile(DIST, 0.01)
-const P_MAX = quantile(DIST, 0.99)
+const DIST = if TIMING_MODE == "synthetic"
+    Pareto(1.5, 0.01)
+else
+    data = open("$(@__DIR__)/$TIMING_FILE") do file
+        JSON.parse(file)
+    end
+    # Omitting the first element due to limitations within timing measurements
+    # Assuming 330_000 cycles per 0.02 second = 16.5 Mhz
+    sort(DATA["t"][2:end]) / 330_000 * 0.02
+end
 
 # Chosen quantiles
 const I_VALUES = 0.01:0.01:1.0
@@ -123,7 +120,8 @@ for u in U_VALUES
     @info "Elapsed time:" t
     p99, p99_lower, p99_upper = summarize_data(data, p=0.99, α=0.05)
     @info "Quantiles" p99 p99_lower p99_upper
-    push!(df, (String(SYSNAME), "slre", BATCHSIZE, q, PERIOD, u, p99, p99_lower, p99_upper))
+    @info "Dataframe" df
+    push!(df, (String(SYSNAME), if TIMING_MODE == "synthetic" TIMING_MODE else TIMING_FILE end, BATCHSIZE, q, PERIOD, u, p99, p99_lower, p99_upper))
 end
 
 @info df
