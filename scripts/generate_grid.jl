@@ -51,7 +51,7 @@ else
     end
     # Omitting the first element due to limitations within timing measurements
     # Assuming 330_000 cycles per 0.02 second = 16.5 Mhz
-    sort(DATA["t"][2:end]) / 330_000 * 0.02
+    sort(data["t"][2:end]) / 330_000 * 0.02
 end
 
 # Chosen quantiles

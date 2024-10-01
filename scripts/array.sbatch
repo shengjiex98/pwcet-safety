@@ -28,7 +28,11 @@ SECONDS=0
 # (set -x; COMPARE_MODE=y julia --project --threads=1 generate_data_mpc.jl)
 
 # (set -x; COMPARE_MODE=y julia --project --threads=1 generate_grid_mpc.jl)
-(set -x; BATCHSIZE=300000 julia --project --threads=16 generate_grid.jl)
+# (set -x; BATCHSIZE=30000 julia --project --threads=16 generate_grid.jl)
+# (set -x; BATCHSIZE=30000 SYSNAME=F1T TIMING_MODE=synthetic TIMING_FILE=picojpeg-emnist.json P_MIN=0.005 P_MAX=0.055 julia --project --threads=16 generate_grid.jl)
+# (set -x; BATCHSIZE=30000 SYSNAME=F1T TIMING_MODE=file TIMING_FILE=picojpeg-emnist.json P_MIN=0.005 P_MAX=0.055 julia --project --threads=16 generate_grid.jl)
+# (set -x; BATCHSIZE=30000 SYSNAME=CC2 TIMING_MODE=synthetic TIMING_FILE=huffbench.json P_MIN=0.005 P_MAX=0.055 julia --project --threads=16 generate_grid.jl)
+(set -x; BATCHSIZE=30000 SYSNAME=CC2 TIMING_MODE=file TIMING_FILE=huffbench.json P_MIN=0.005 P_MAX=0.055 julia --project --threads=16 generate_grid.jl)
 
 echo "End running Julia: " $(date)
 echo "Elapsed time: $SECONDS"
