@@ -1,60 +1,34 @@
 import plotly.express as px
 import pandas as pd
+from typing import Callable
 
-def plot(df, 
-         x_axis, 
-         hover_fields = ['p99', 'hit_chance', 'period', 'utilization'], 
-         color_by = None, 
-         filter_fn = None, 
-         allpoints = True):
-    
+
+def plot(
+    df: pd.DataFrame,
+    x_axis: str,
+    hover_fields: list[str] = ["p99", "hit_chance", "period", "utilization"],
+    color_by: str = None,
+    filter_fn: Callable[[pd.Series], bool] = None,
+    allpoints: bool = True,
+):
     if filter_fn is not None:
-        df = filter_fn(df)
-    
+        df = df.loc[df.apply(filter_fn, axis=1)]
     if allpoints:
         title_text = f"{df.iloc[0, 0]} - {df.iloc[0, 1]}"
-        fig = px.scatter(df, x=x_axis, y='p99', hover_data=hover_fields, color=color_by)
-
+        fig = px.scatter(df, x=x_axis, y="p99", hover_data=hover_fields, color=color_by)
     else:
-        df_pareto = pareto_front(df, x_axis)
+        df_pareto = df.loc[df.groupby(x_axis)["p99"].idxmin()]
+        # df_pareto = pareto_front(df, x_axis)
         title_text = f"{df_pareto.iloc[0, 0]} - {df_pareto.iloc[0, 1]}"
-        fig = px.scatter(df_pareto, x=x_axis, y='p99', hover_data=hover_fields, color=color_by)
-
+        fig = px.line(
+            df_pareto, x=x_axis, y="p99", hover_data=hover_fields, color=color_by, markers=True
+        )
     fig.update_layout(title=title_text, title_x=0.5)
-    fig.update_layout(plot_bgcolor='white')
+    fig.update_layout(plot_bgcolor="white")
     fig.update_xaxes(
-        mirror=False,
-        ticks='outside',
-        showline=True,
-        linecolor='black',
-        gridcolor='lightgrey'
+        mirror=False, ticks="outside", showline=True, linecolor="black", gridcolor="lightgrey"
     )
     fig.update_yaxes(
-        mirror=False,
-        ticks='outside',
-        showline=True,
-        linecolor='black',
-        gridcolor='lightgrey'
+        mirror=False, ticks="outside", showline=True, linecolor="black", gridcolor="lightgrey"
     )
     return fig
-import pandas as pd
-
-def pareto_front(df, col):
-    df_sorted = df.loc[df.groupby(col)['p99'].idxmin()]
-    df_sorted = df_sorted.sort_values(by=col, ascending=True)
-    pareto_front = []
-    min_dev = float('inf')
-    for index, row in df_sorted.iterrows():
-        if row['p99'] < min_dev:
-            pareto_front.append(row)
-            min_dev = row['p99']  
-    return pd.DataFrame(pareto_front)
-
-def readfile(DATA_PATH, JOB_ID, FILE_NUM):
-    FILES = [f"{DATA_PATH}/{JOB_ID}/{i}.csv" for i in FILE_NUM]
-    dataframes = []
-    for i, file in zip(FILE_NUM, FILES):
-        ref = pd.read_csv(file, names=None, index_col=None)
-        dataframes.append(ref)
-    df = pd.concat(dataframes)
-    return df
