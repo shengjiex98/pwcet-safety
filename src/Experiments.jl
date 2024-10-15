@@ -15,8 +15,7 @@ using RealTimeScheduling
 using ControlTimingSafety
 using MATLABControlTest
 
-# struct SamplerPWCET <: Random.Sampler{BitVector}
-struct SamplerPWCET <: SamplerWeaklyHard
+struct SamplerPWCET <: Random.Sampler{BitVector}
     q::Real
     H::Integer
 end
@@ -64,9 +63,8 @@ function generate_samples(a::Automaton, z0::AbstractVector{<:Real}, q::Real, n::
     end
     if sorted
         sort!(samples, by=x -> x[2])
-    else
-        samples
     end
+    samples
 end
 
 function generate_samples_mpc(

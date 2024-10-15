@@ -1,6 +1,6 @@
 using Revise, MATLABControlTest, ControlSystemsBase, CSV, DataFrames
 
-sys = ss(tf([3, 1],[1, 0.6, 1])); data = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
+sys = ss(tf([3, 1],[1, 0.6, 1])); data = CSV.read("mpc_randomref_O1.csv", DataFrame)
 
 period = 0.1; sysd = c2d(sys, period); x0 = zeros(sysd.nx); sim = run_simulation(sysd, x0, data[:,:r])
 

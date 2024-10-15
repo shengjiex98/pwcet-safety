@@ -66,7 +66,7 @@ const SAVE_PATH = "$(@__DIR__)/../data/mpc-uniform-period/$JOB_ID/$TASK_ID/"
 # <<< Experiment parameters <<<
 
 # Reference and cycle reading
-# const DATA = CSV.read("output-jumping1000-1e3-O1.csv", DataFrame)
+# const DATA = CSV.read("mpc_randomref_O1.csv", DataFrame)
 
 # Normalizing factor: 100_000 cycles per 0.2 second
 # const E_VALUES = sort(DATA[:, :t]) / 100_000 * 0.2
